@@ -1,0 +1,69 @@
+[
+    {
+        "task_name": "check_time",
+        "conditions": ["今何時？", "現在の時刻を教えて", "今の時刻を知りたい", "何時ですか"],
+        "fields": []
+    },
+    {
+        "task_name": "check_date",
+        "conditions": ["今日は何日？", "今日の日付を教えて", "現在の日付を知りたい", "何時ですか"],
+        "fields": []
+    },
+
+
+    {
+        "task_name": "set_timer",
+        "conditions": ["⚪︎分後に教えて", "タイマー⚪︎分", "", "⚪︎分経ったら言って", "⚪︎分経ったら教えて"],
+        "fields": ["time（分単位に変換）"]
+    },
+
+
+    {
+        "task_name": "check_wether",
+        "conditions": ["明日の天気", "今日の天気教えて"],
+        "fields": ["対象日", "対象地域（都道府県）"]
+    },
+
+
+    {
+        "task_name": "get_news",
+        "conditions": ["ニュースを教えて", "（国）の（分野）に関するニュースを教えて"],
+        "fields": ["country(in Japanese)", "category(business, entertainment, general, health, science, sports, technology)"]
+    },
+
+
+    {
+        "task_name": "spotify_play_music",
+        "conditions": ["（曲名）をかけて", "（曲名）を流して", "（曲名）を再生して"],
+        "fields": ["曲名"]
+    },
+    {
+        "task_name": "spotify_pause_music",
+        "conditions": ["音楽止めて", "再生止めて", "音楽を一時停止して", "止めて"],
+        "fields": []
+    },
+    {
+        "task_name": "spotify_next_track",
+        "conditions": ["次の曲にして", "スキップして", "次の曲を再生して"],
+        "fields": []
+    },
+    {
+        "task_name": "spotify_play_playlist",
+        "conditions": ["（プレイリスト名）を再生して", "プレイリスト（プレイリスト名）を流して"],
+        "fields": ["プレイリスト名"]
+    },
+
+
+    {
+        "task_name": "wikipedia_search",
+        "conditions": ["（単語）を調べて", "（単語）について教えて", "（単語）ってどういう意味"],
+        "fields": ["単語"]
+    },
+
+
+    {
+        "task_name": "paper_search",
+        "conditions": ["（単語）の論文を調べて", "（単語）の論文について教えて", "（単語）に関する論文"],
+        "fields": ["単語"]
+    }
+]

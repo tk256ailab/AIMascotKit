@@ -1,0 +1,2997 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <link href="https://fonts.googleapis.com/css2?family=Kiwi+Maru&display=swap" rel="stylesheet">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VRM AITuber System</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Inter', sans-serif;
+            overflow: hidden;
+            background-color: transparent;
+        }
+        
+        #vrmCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+        
+        /* メニューボタン */
+        #menuToggle {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            border: none;
+            padding: 0;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 18px;
+            z-index: 1001;
+            transition: all 0.3s ease;
+            width: 60px;
+            height: 60px;
+            min-width: 60px;
+            min-height: 60px;
+            max-width: 60px;
+            max-height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            line-height: 1;
+        }
+        
+        #menuToggle:hover {
+            background: rgba(0, 0, 0, 0.9);
+            transform: scale(1.1);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+        }
+        
+        #menuToggle.hidden {
+            opacity: 0;
+            pointer-events: none;
+            transform: scale(0.8);
+        }
+        
+        /* メニューパネル */
+        #menuPanel {
+            position: absolute;
+            top: 20px;
+            left: 80px;
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            z-index: 1000;
+            min-width: 320px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+            transform: translateX(-500px);
+            transition: transform 0.3s ease;
+        }
+        
+        #menuPanel.open {
+            transform: translateX(0);
+        }
+        
+        #menuPanel.auto-hide {
+            transform: translateX(-500px);
+            transition: transform 0.3s ease;
+        }
+        
+        .menu-section {
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .menu-section:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+        }
+        
+        .menu-section h3 {
+            margin: 0 0 10px 0;
+            color: #e0e0e0;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        
+        .control-group {
+            margin-bottom: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .control-group label {
+            font-weight: bold;
+            color: #e0e0e0;
+            font-size: 14px;
+        }
+        
+        .button-row {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .button-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+            margin-top: 10px;
+        }
+        
+        .expression-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-top: 10px;
+        }
+        
+        button {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            font-size: 12px;
+            min-width: 80px;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+        
+        .primary-btn {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+        
+        .animation-btn {
+            background: linear-gradient(135deg, #4CAF50, #2e8b57);
+            color: white;
+            font-size: 11px;
+        }
+        
+        .expression-btn {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            color: white;
+            font-size: 11px;
+        }
+        
+        .sample-btn {
+            background: linear-gradient(135deg, #ffa502, #ff6348);
+            color: white;
+        }
+        
+        button:disabled {
+            background: #666;
+            cursor: not-allowed;
+            opacity: 0.5;
+            transform: none;
+        }
+        
+        select {
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #555;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 14px;
+            width: 100%;
+        }
+        
+        select option {
+            background: #333;
+            color: white;
+        }
+        
+        .toggle-switch {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+        }
+        
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 34px;
+        }
+        
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        
+        input:checked + .slider {
+            background-color: #667eea;
+        }
+        
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+        
+        /* ご機嫌度メーター */
+        /* ゴ機嫌度メーター - ハート&ピンクテーマ */
+        #moodMeter {
+            position: absolute;
+            top: 50%;
+            right: 20px;
+            transform: translateY(-50%);
+            background: linear-gradient(135deg, rgba(255, 182, 193, 0.95), rgba(255, 192, 203, 0.9));
+            padding: 20px;
+            border-radius: 20px;
+            color: #ff1493;
+            z-index: 999;
+            backdrop-filter: blur(10px);
+            transition: opacity 0.3s ease;
+            border: 3px solid #ffb6c1;
+            box-shadow: 0 8px 25px rgba(255, 20, 147, 0.3);
+            text-align: center;
+            font-family: 'Kiwi Maru', sans-serif;
+            font-weight: bold;
+        }
+        
+        #moodMeter.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+        
+        .mood-bar {
+            width: 30px;
+            height: 200px;
+            background: linear-gradient(to top, 
+                rgba(139, 69, 19, 0.9) 0%,
+                rgba(220, 20, 60, 0.8) 20%,
+                rgba(255, 105, 180, 0.8) 40%,
+                rgba(255, 182, 193, 0.9) 60%,
+                rgba(255, 192, 203, 0.9) 80%,
+                rgba(255, 240, 245, 1.0) 100%);
+            border-radius: 15px;
+            position: relative;
+            margin: 10px auto;
+            border: 2px solid #ff69b4;
+            box-shadow: 0 4px 12px rgba(255, 105, 180, 0.4);
+        }
+        
+        .mood-indicator {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 40px;
+            height: 40px;
+            background: transparent;
+            border-radius: 50%;
+            transition: bottom 0.5s ease;
+            font-size: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: heartbeat 1.5s ease-in-out infinite;
+            text-shadow: 0 2px 8px rgba(255, 20, 147, 0.6);
+        }
+        
+        @keyframes heartbeat {
+            0%, 100% {
+                transform: translateX(-50%) scale(1);
+            }
+            50% {
+                transform: translateX(-50%) scale(1.1);
+            }
+        }
+        
+        #statusDisplay {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-size: 12px;
+            z-index: 999;
+            backdrop-filter: blur(10px);
+        }
+        
+        /* AITuber視点切り替えボタン - アイコンのみ */
+        #visionToggleButton {
+            position: absolute;
+            top: 90px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            padding: 0;
+            font-size: 20px;
+            cursor: pointer;
+            z-index: 10002;
+            transition: all 0.3s ease;
+            width: 50px;
+            height: 50px;
+            min-width: 50px;
+            min-height: 50px;
+            max-width: 50px;
+            max-height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            line-height: 1;
+        }
+
+        #visionToggleButton:hover {
+            background: rgba(0, 0, 0, 0.9);
+            transform: scale(1.1);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+        }
+
+        #visionToggleButton.hidden {
+            opacity: 0;
+            pointer-events: none;
+            transform: scale(0.8);
+        }
+
+        /* AITuber視点画像エリア */
+        #aiTuberVision {
+            position: absolute;
+            top: 150px;
+            left: 20px;
+            width: 300px;
+            height: 200px;
+            background: linear-gradient(135deg, #fff4e6 0%, #ffecd1 100%);
+            border: 4px solid #ff8c42;
+            border-radius: 20px;
+            box-shadow: 0 8px 25px rgba(255, 111, 0, 0.4);
+            z-index: 9998;
+            overflow: hidden;
+            backdrop-filter: blur(8px);
+            transition: all 0.3s ease;
+            opacity: 1;
+            visibility: visible;
+        }
+
+        #aiTuberVision.hidden {
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-20px);
+        }
+
+        #aiTuberVision:hover {
+            transform: scale(1.02);
+            box-shadow: 0 10px 30px rgba(255, 111, 0, 0.5);
+        }
+
+        #aiTuberVision.hidden:hover {
+            transform: translateY(-20px) scale(1.02);
+        }
+
+        #visionLabel {
+            position: absolute;
+            top: -15px;
+            left: 15px;
+            background: linear-gradient(45deg, #ff8c42, #ff6f00);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 15px;
+            font-family: 'Kiwi Maru', sans-serif;
+            font-size: 14px;
+            font-weight: bold;
+            box-shadow: 0 4px 12px rgba(255, 111, 0, 0.3);
+            z-index: 9999;
+        }
+
+        #visionImage {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 16px;
+            transition: all 0.3s ease;
+        }
+
+        #visionPlaceholder {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: #ff6f00;
+            font-family: 'Kiwi Maru', sans-serif;
+            font-size: 16px;
+            text-align: center;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        #visionPlaceholder .icon {
+            font-size: 48px;
+            margin-bottom: 10px;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 0.7;
+                transform: scale(1);
+            }
+            50% {
+                opacity: 1;
+                transform: scale(1.1);
+            }
+        }
+
+        /* テーマカラー用CSS変数 */
+        :root {
+            --theme-primary: #ff1493;
+            --theme-secondary: #ffb6c1;
+            --theme-bg-start: rgba(255, 182, 193, 0.95);
+            --theme-bg-end: rgba(255, 192, 203, 0.9);
+            --theme-shadow: rgba(255, 20, 147, 0.4);
+        }
+        
+        /* 字幕表示 - テーマカラー対応 */
+        #subtitle {
+            position: absolute;
+            bottom: 8%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, var(--theme-bg-start), var(--theme-bg-end));
+            color: var(--theme-primary);
+            font-size: 24px;
+            padding: 18px 35px;
+            border-radius: 25px;
+            pointer-events: none;
+            max-width: 85%;
+            text-align: center;
+            font-family: 'Kiwi Maru', sans-serif;
+            z-index: 99999;
+            box-shadow: 0 8px 25px var(--theme-shadow);
+            border: 3px solid var(--theme-secondary);
+            backdrop-filter: blur(12px);
+            animation: floatBounce 2.5s ease-in-out infinite;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+            text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.8);
+            font-weight: bold;
+        }
+
+        #subtitle.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        @keyframes floatBounce {
+            0%, 100% {
+                transform: translateX(-50%) translateY(0);
+            }
+            50% {
+                transform: translateX(-50%) translateY(-10px);
+            }
+        }
+
+        @keyframes popIn {
+            0% {
+                opacity: 0;
+                transform: translateX(-50%) scale(0.8);
+            }
+            100% {
+                opacity: 1;
+                transform: translateX(-50%) scale(1);
+            }
+        }
+        
+        /* 元の字幕表示は隠す */
+        #subtitleDisplay {
+            display: none;
+        }
+        
+        #loadingOverlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-size: 18px;
+            z-index: 2000;
+        }
+        
+        .hidden {
+            display: none !important;
+        }
+        
+        /* アニメーション詳細メニュー */
+        #animationDetailMenu {
+            background: rgba(20, 20, 20, 0.95);
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            display: none;
+        }
+        
+        #animationDetailMenu.open {
+            display: block;
+        }
+    </style>
+    
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.176.0/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.176.0/examples/jsm/",
+            "@pixiv/three-vrm": "https://cdn.jsdelivr.net/npm/@pixiv/three-vrm@3/lib/three-vrm.module.min.js",
+            "@pixiv/three-vrm-animation": "https://cdn.jsdelivr.net/npm/@pixiv/three-vrm-animation@3/lib/three-vrm-animation.module.min.js"
+        }
+    }
+    </script>
+</head>
+<body>
+    <div id="loadingOverlay">
+        <div>VRM AITuberシステムを初期化中...</div>
+    </div>
+    
+    <canvas id="vrmCanvas"></canvas>
+    
+    <button id="menuToggle">☰</button>
+    
+    <div id="menuPanel">
+        <div class="menu-section">
+            <h3>VRMモデル選択</h3>
+            <div class="control-group">
+                <select id="characterSelect">
+                    <option value="sample" selected>サンプル</option>
+                </select>
+            </div>
+        </div>
+        
+        <div class="menu-section">
+            <h3>テーマカラー設定</h3>
+            <div class="control-group">
+                <label>字幕テーマ</label>
+                <select id="themeSelect">
+                    <option value="pink" selected>ピンク</option>
+                    <option value="blue">ブルー</option>
+                    <option value="green">グリーン</option>
+                    <option value="purple">パープル</option>
+                    <option value="orange">オレンジ</option>
+                    <option value="cyan">シアン</option>
+                    <option value="red">レッド</option>
+                    <option value="yellow">イエロー</option>
+                    <option value="indigo">インディゴ</option>
+                    <option value="teal">ティール</option>
+                    <option value="magenta">マゼンタ</option>
+                    <option value="lime">ライム</option>
+                </select>
+            </div>
+        </div>
+        
+        <div class="menu-section">
+            <h3>字幕設定</h3>
+            <div class="control-group">
+                <div class="toggle-switch">
+                    <span>日本語表示</span>
+                    <label class="switch">
+                        <input type="checkbox" id="japaneseToggle" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </div>
+            <div class="control-group">
+                <div class="toggle-switch">
+                    <span>英語表示</span>
+                    <label class="switch">
+                        <input type="checkbox" id="englishToggle" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </div>
+        </div>
+        
+        <div class="menu-section">
+            <h3>ご機嫌度表示</h3>
+            <div class="toggle-switch">
+                <span>表示</span>
+                <label class="switch">
+                    <input type="checkbox" id="moodToggle" checked>
+                    <span class="slider"></span>
+                </label>
+            </div>
+        </div>
+        
+        <div class="menu-section">
+            <h3>サンプル音声</h3>
+            <div class="button-row">
+                <button class="sample-btn" id="sampleVoiceBtn">サンプル音声再生</button>
+            </div>
+        </div>
+        
+        <div class="menu-section">
+            <h3>アニメーションテスト</h3>
+            <div class="button-row">
+                <button class="primary-btn" id="animationTestBtn">詳細メニューを開く</button>
+                <button class="primary-btn" id="stopAnimationBtn">アニメーション停止</button>
+            </div>
+            
+            <div id="animationDetailMenu">
+                <h4 style="margin-top: 0; color: #e0e0e0;">感情・アクション</h4>
+                <div class="button-grid">
+                    <button class="animation-btn" data-animation="Angry">😠 Angry</button>
+                    <button class="animation-btn" data-animation="Sad">😢 Sad</button>
+                    <button class="animation-btn" data-animation="Surprised">😲 Surprised</button>
+                    <button class="animation-btn" data-animation="Blush">😊 Blush</button>
+                    <button class="animation-btn" data-animation="Sleepy">😴 Sleepy</button>
+                    <button class="animation-btn" data-animation="Thinking">🤔 Thinking</button>
+                </div>
+                
+                <h4 style="color: #e0e0e0; margin-top: 15px;">アクション・動作</h4>
+                <div class="button-grid">
+                    <button class="animation-btn" data-animation="Clapping">👏 Clapping</button>
+                    <button class="animation-btn" data-animation="Jump">🦘 Jump</button>
+                    <button class="animation-btn" data-animation="JumpHigh">⬆️ Jump High</button>
+                    <button class="animation-btn" data-animation="Goodbye">👋 Goodbye</button>
+                    <button class="animation-btn" data-animation="Relax">😌 Relax</button>
+                    <button class="animation-btn" data-animation="LookAround">👀 Look Around</button>
+                </div>
+                
+                <h4 style="color: #e0e0e0; margin-top: 15px;">追加アクション</h4>
+                <div class="button-grid">
+                    <button class="animation-btn" data-animation="LookAround2">👁️ Look Around 2</button>
+                </div>
+                
+                <h4 style="color: #e0e0e0; margin-top: 15px;">表情オーバーライド</h4>
+                <div class="button-row" style="margin-bottom: 10px;">
+                    <button class="primary-btn" id="resetExpressionBtn">表情リセット</button>
+                </div>
+                <div class="expression-grid">
+                    <button class="expression-btn" data-expression="happy">😊 Happy</button>
+                    <button class="expression-btn" data-expression="angry">😠 Angry</button>
+                    <button class="expression-btn" data-expression="sad">😢 Sad</button>
+                    <button class="expression-btn" data-expression="surprised">😲 Surprised</button>
+                    <button class="expression-btn" data-expression="relaxed">😌 Relaxed</button>
+                    <button class="expression-btn" data-expression="neutral">😐 Neutral</button>
+                </div>
+                
+                <h4 style="color: #e0e0e0; margin-top: 15px;">VRM固有表情</h4>
+                <div id="dynamicExpressionsGrid" class="expression-grid">
+                    </div>
+            </div>
+        </div>
+    </div>
+    
+    <div id="moodMeter">
+        <div style="text-align: center; margin-bottom: 10px;">ご機嫌度</div>
+        <div class="mood-bar">
+            <div class="mood-indicator" id="moodIndicator">💖</div>
+        </div>
+        <div id="moodValue" style="text-align: center; font-size: 16px; margin-top: 10px;">75</div>
+    </div>
+    
+    <div id="statusDisplay">初期化中...</div>
+    
+    <button id="visionToggleButton">👁️</button>
+
+    <div id="aiTuberVision" class="hidden">
+        <div id="visionLabel">👁️ AITuberの視点</div>
+        <img id="visionImage" style="display: none;" alt="AITuber視点画像">
+        <div id="visionPlaceholder">
+            <div class="icon">👀</div>
+            <div>画像を読み込み中...</div>
+        </div>
+    </div>
+
+    <div id="subtitle"></div>
+    <div id="subtitleDisplay" class="hidden">
+        <span class="japanese"></span>
+        <span class="english"></span>
+    </div>
+    
+    <script type="module">
+        import * as THREE from 'three';
+        import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        import { VRMLoaderPlugin, VRMUtils } from '@pixiv/three-vrm';
+        import { VRMAnimationLoaderPlugin, createVRMAnimationClip } from '@pixiv/three-vrm-animation';
+
+        class VRMAITuberSystem {
+            constructor() {
+                this.currentVRM = null;
+                this.vrmMixer = null;
+                this.currentAction = null;
+                this.currentExpressionAction = null;
+                this.vrmClock = new THREE.Clock();
+                this.isBlinking = false;
+                this.blinkTimer = null;
+                
+                // 口パク関連変数
+                this.isLipSyncActive = false;
+                this.audioContext = null;
+                this.analyser = null;
+                this.dataArray = null;
+                this.lipSyncAnimationFrame = null;
+                this.currentVowelExpression = 'a';
+                this.lastVowelChangeTime = 0;
+                this.lipSyncVowels = ['a', 'i', 'u', 'e', 'o'];
+                
+                // 表情アニメーション管理
+                this.currentExpressionValues = {};
+                this.targetExpressionValues = {};
+                this.expressionAnimationFrame = null;
+                this.isExpressionAnimating = false;
+                this.expressionAnimationStartTime = 0;
+                this.expressionAnimationDuration = 800; // 800msで自然な変化
+                
+                // アニメーション遷移管理
+                this.animationFinishedListener = null;
+                
+                // ループスムージング管理
+                this.loopSmoothingFrame = null;
+                this.currentIdleClip = null;
+                
+                // キャラクターパス（index.htmlから見た相対パス）
+                this.characterPaths = {
+                    'sample': '../../assets/characters/Sample/vrm/Sample.vrm'
+                };
+                
+                // アニメーションパス
+                this.animationBasePath = '../../assets/animations/';
+                
+                // DOM要素
+                this.canvas = document.getElementById('vrmCanvas');
+                this.menuToggle = document.getElementById('menuToggle');
+                this.menuPanel = document.getElementById('menuPanel');
+                this.characterSelect = document.getElementById('characterSelect');
+                this.themeSelect = document.getElementById('themeSelect');
+                this.japaneseToggle = document.getElementById('japaneseToggle');
+                this.englishToggle = document.getElementById('englishToggle');
+                this.moodToggle = document.getElementById('moodToggle');
+                this.moodMeter = document.getElementById('moodMeter');
+                this.moodIndicator = document.getElementById('moodIndicator');
+                this.moodValue = document.getElementById('moodValue');
+                this.statusDisplay = document.getElementById('statusDisplay');
+                this.loadingOverlay = document.getElementById('loadingOverlay');
+                this.animationTestBtn = document.getElementById('animationTestBtn');
+                this.animationDetailMenu = document.getElementById('animationDetailMenu');
+                this.sampleVoiceBtn = document.getElementById('sampleVoiceBtn');
+                this.stopAnimationBtn = document.getElementById('stopAnimationBtn');
+                this.resetExpressionBtn = document.getElementById('resetExpressionBtn');
+                this.dynamicExpressionsGrid = document.getElementById('dynamicExpressionsGrid');
+                this.subtitleDisplay = document.getElementById('subtitleDisplay');
+                this.subtitle = document.getElementById('subtitle');
+                this.visionToggleButton = document.getElementById('visionToggleButton');
+                this.aiTuberVision = document.getElementById('aiTuberVision');
+                this.visionImage = document.getElementById('visionImage');
+                this.visionPlaceholder = document.getElementById('visionPlaceholder');
+                
+                // 視点表示の状態管理
+                this.isVisionVisible = false;
+                
+                // メニュー自動非表示タイマー（無効化）
+                // this.menuAutoHideTimer = null;
+                
+                // 字幕関連
+                this.lastSubtitleTimestamp = 0;
+                this.subtitleSocket = null;
+                
+                // 音声再生ポーリング関連
+                this.voicePollingInterval = null;
+                
+                // ご機嫌度ポーリング関連
+                this.moodPollingInterval = null;
+                this.currentMoodValue = 75; // 初期値
+                
+                // 感情・表情ポーリング関連
+                this.emotionPollingInterval = null;
+                this.expressionPollingInterval = null;
+                this.currentEmotion = null; // 現在の感情
+                this.currentExpressionFromBackend = null; // バックエンドからの表情
+                this.currentEmotionalExpression = 'neutral'; // 現在の感情表情（音声終了時リセット用）
+                
+                // スクリーンショット更新関連（Live2Dスタイル）
+                this.lastScreenshotUpdate = 0; // 手動更新用のタイムスタンプのみ
+                
+                // 字幕設定
+                this.subtitleSettings = {
+                    showJapanese: true,
+                    showEnglish: true
+                };
+                
+                // 現在の字幕をクリアするタイマー
+                this.subtitleClearTimer = null;
+                
+                this.initializeSystem();
+            }
+            
+            async initializeSystem() {
+                try {
+                    this.updateStatus('VRMシステム初期化中...');
+                    this.setupEventListeners();
+                    this.initializeThreeJS();
+                    
+                    this.updateStatus('デフォルトキャラクター読み込み中...');
+                    await this.loadCharacter('sample');
+                    
+                    this.updateStatus('アニメーション開始...');
+                    await this.startIdleLoop();
+                    this.startBlinking();
+                    
+                    this.updateStatus('初期化完了');
+                    this.hideLoading();
+                    
+                    // 字幕接続初期化
+                    this.initializeSubtitleConnection();
+                    
+                    // 音声再生ポーリング開始
+                    this.initializeVoicePolling();
+                    
+                    // ご機嫌度ポーリング開始
+                    this.initializeMoodPolling();
+                    
+                    // 感情・表情ポーリング開始
+                    this.initializeEmotionPolling();
+                    
+                    // 初期スクリーンショット設定と自動更新開始
+                    this.initializeScreenshotAutoUpdate();
+                    
+                } catch (error) {
+                    console.error('初期化エラー:', error);
+                    this.updateStatus(`初期化エラー: ${error.message}`);
+                    setTimeout(() => this.hideLoading(), 3000);
+                }
+            }
+            
+            setupEventListeners() {
+                // メニュートグル
+                this.menuToggle.addEventListener('click', () => {
+                    this.toggleMenu();
+                });
+                
+                // メニュー外クリックで自動非表示
+                document.addEventListener('click', (e) => {
+                    if (!this.menuPanel.contains(e.target) && !this.menuToggle.contains(e.target)) {
+                        this.hideMenu();
+                    }
+                });
+                
+                // メニュー内のクリックでイベント伝播を停止
+                this.menuPanel.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                });
+                
+                // キャラクター選択
+                this.characterSelect.addEventListener('change', (e) => {
+                    this.loadCharacter(e.target.value);
+                });
+                
+                // テーマカラー選択
+                this.themeSelect.addEventListener('change', (e) => {
+                    this.changeTheme(e.target.value);
+                });
+                
+                // 字幕設定
+                this.japaneseToggle.addEventListener('change', (e) => {
+                    this.subtitleSettings.showJapanese = e.target.checked;
+                    console.log('日本語表示:', this.subtitleSettings.showJapanese);
+                });
+                
+                this.englishToggle.addEventListener('change', (e) => {
+                    this.subtitleSettings.showEnglish = e.target.checked;
+                    console.log('英語表示:', this.subtitleSettings.showEnglish);
+                });
+                
+                // ご機嫌度表示切り替え
+                this.moodToggle.addEventListener('change', (e) => {
+                    if (e.target.checked) {
+                        this.moodMeter.classList.remove('hidden');
+                    } else {
+                        this.moodMeter.classList.add('hidden');
+                    }
+                });
+                
+                // アニメーションテスト詳細メニュー
+                this.animationTestBtn.addEventListener('click', () => {
+                    this.animationDetailMenu.classList.toggle('open');
+                    this.animationTestBtn.textContent = 
+                        this.animationDetailMenu.classList.contains('open') ? 
+                        '詳細メニューを閉じる' : '詳細メニューを開く';
+                });
+                
+                // アニメーションボタン
+                document.querySelectorAll('.animation-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const animationName = btn.getAttribute('data-animation');
+                        this.playAnimation(animationName);
+                    });
+                });
+                
+                // 表情ボタン
+                document.querySelectorAll('.expression-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const expressionName = btn.getAttribute('data-expression');
+                        this.setExpression(expressionName);
+                    });
+                });
+                
+                // サンプル音声
+                this.sampleVoiceBtn.addEventListener('click', () => {
+                    this.playSampleVoice();
+                });
+                
+                // アニメーション停止
+                this.stopAnimationBtn.addEventListener('click', () => {
+                    this.stopCurrentAnimation();
+                });
+                
+                // 表情リセット
+                this.resetExpressionBtn.addEventListener('click', () => {
+                    this.resetAllExpressions();
+                });
+                
+                // 視点表示ボタン
+                this.visionToggleButton.addEventListener('click', () => {
+                    this.toggleVision();
+                });
+                
+                // 視点表示の外部クリックで閉じる
+                document.addEventListener('click', (e) => {
+                    if (this.isVisionVisible && 
+                        !this.aiTuberVision.contains(e.target) && 
+                        !this.visionToggleButton.contains(e.target)) {
+                        this.toggleVision();
+                    }
+                });
+                
+                // 視点表示内のクリックでイベント伝播を停止
+                this.aiTuberVision.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                });
+                
+                // リサイズ対応
+                window.addEventListener('resize', () => this.handleResize());
+            }
+            
+            initializeThreeJS() {
+                // レンダラー（透明背景対応）
+                this.renderer = new THREE.WebGLRenderer({
+                    canvas: this.canvas,
+                    antialias: true,
+                    alpha: true
+                });
+                this.renderer.setSize(window.innerWidth, window.innerHeight);
+                this.renderer.setPixelRatio(window.devicePixelRatio);
+                this.renderer.outputEncoding = THREE.sRGBEncoding;
+                this.renderer.setClearColor(0x000000, 0); // 透明背景を設定
+                
+                // カメラ（正面を向くように設定）
+                this.camera = new THREE.PerspectiveCamera(
+                    30.0,
+                    window.innerWidth / window.innerHeight,
+                    0.1,
+                    20.0
+                );
+                this.camera.position.set(0.0, 1.0, 3.0);
+                
+                // コントロール
+                this.controls = new OrbitControls(this.camera, this.canvas);
+                this.controls.screenSpacePanning = true;
+                this.controls.target.set(0.0, 1.0, 0.0);
+                this.controls.update();
+                
+                // シーン（透明背景）
+                this.scene = new THREE.Scene();
+                // this.scene.background = new THREE.Color(0x212121); // 背景を透明にするためコメントアウト
+                
+                // ライト設定（VRMモデルを明るく表示）
+                const directionalLight = new THREE.DirectionalLight(0xffffff, 0.2); // 強度を2倍に
+                directionalLight.position.set(1.0, 1.0, 1.0).normalize();
+                this.scene.add(directionalLight);
+                
+                // 追加の正面ライト
+                const frontLight = new THREE.DirectionalLight(0xffffff, 1.5);
+                frontLight.position.set(0.0, 0.5, 1.0).normalize();
+                this.scene.add(frontLight);
+                
+                // 左右からの補助ライト
+                const leftLight = new THREE.DirectionalLight(0xffffff, 0.8);
+                leftLight.position.set(-1.0, 0.0, 0.5).normalize();
+                this.scene.add(leftLight);
+                
+                const rightLight = new THREE.DirectionalLight(0xffffff, 0.8);
+                rightLight.position.set(1.0, 0.0, 0.5).normalize();
+                this.scene.add(rightLight);
+                
+                // アンビエントライトを強化
+                const ambientLight = new THREE.AmbientLight(0xffffff, 1.2); // 強度を増加
+                this.scene.add(ambientLight);
+                
+                // VRMローダー
+                this.loader = new GLTFLoader();
+                this.loader.register(parser => new VRMLoaderPlugin(parser));
+                this.loader.register(parser => new VRMAnimationLoaderPlugin(parser));
+                
+                // アニメーションループ開始
+                this.startAnimationLoop();
+            }
+            
+            toggleMenu() {
+                if (this.menuPanel.classList.contains('open')) {
+                    this.hideMenu();
+                } else {
+                    this.showMenu();
+                }
+            }
+            
+            showMenu() {
+                this.menuPanel.classList.add('open');
+                this.menuPanel.classList.remove('auto-hide');
+                
+                // 自動非表示タイマーを無効化
+                // this.clearMenuAutoHideTimer();
+                // this.menuAutoHideTimer = setTimeout(() => {
+                //    this.hideMenu();
+                // }, 10000);
+            }
+            
+            hideMenu() {
+                this.menuPanel.classList.remove('open');
+                this.menuPanel.classList.add('auto-hide');
+                // this.clearMenuAutoHideTimer();
+            }
+            
+            // clearMenuAutoHideTimer() {
+            //    if (this.menuAutoHideTimer) {
+            //        clearTimeout(this.menuAutoHideTimer);
+            //        this.menuAutoHideTimer = null;
+            //    }
+            // }
+            
+            async loadCharacter(characterId) {
+                try {
+                    this.updateStatus(`キャラクター読み込み中: ${characterId}`);
+                    
+                    // 現在のモデルを解放
+                    this.disposeCurrentVRM();
+                    
+                    const modelPath = this.characterPaths[characterId];
+                    if (!modelPath) {
+                        throw new Error(`Unknown character: ${characterId}`);
+                    }
+                    
+                    const gltf = await new Promise((resolve, reject) => {
+                        this.loader.load(
+                            modelPath,
+                            resolve,
+                            (progress) => {
+                                const percent = (progress.loaded / progress.total * 100).toFixed(1);
+                                this.updateStatus(`読み込み中: ${percent}%`);
+                            },
+                            reject
+                        );
+                    });
+                    
+                    const vrm = gltf.userData.vrm;
+                    
+                    // VRMモデルを正面向きに調整
+                    vrm.scene.rotation.y = Math.PI;
+                    
+                    // VRMモデルの明度を調整
+                    vrm.scene.traverse((child) => {
+                        if (child.isMesh && child.material) {
+                            // MToonMaterialの場合
+                            if (child.material.isMToonMaterial) {
+                                // シェーディンググレードを調整してより明るく
+                                if (child.material.shadingGradeRate !== undefined) {
+                                    child.material.shadingGradeRate = 0.2; // デフォルト1.0より明るく
+                                }
+                                // シェーディングシフトを調整
+                                if (child.material.shadingShiftRate !== undefined) {
+                                    child.material.shadingShiftRate = -0.2; // より明るい側にシフト
+                                }
+                                // ライトカラーの強度を上げる
+                                if (child.material.litFactor !== undefined) {
+                                    child.material.litFactor = Math.min(child.material.litFactor * 1.3, 1.0);
+                                }
+                            }
+                            // 通常のマテリアルの場合
+                            else if (child.material.color) {
+                                // カラーの明度を少し上げる
+                                child.material.color.multiplyScalar(1.2);
+                            }
+                            
+                            // 影の受け取りを無効化してより明るく
+                            child.receiveShadow = false;
+                            child.castShadow = false;
+                        }
+                    });
+                    
+                    this.scene.add(vrm.scene);
+                    this.currentVRM = vrm;
+                    
+                    // アニメーションミキサーを作成
+                    this.vrmMixer = new THREE.AnimationMixer(vrm.scene);
+                    
+                    // ミキサーのイベントリスナーをクリア（新しいVRM読み込み時）
+                    if (this.animationFinishedListener) {
+                        this.animationFinishedListener = null;
+                    }
+                    
+                    this.updateStatus('キャラクター読み込み完了');
+                    
+                    // 表情値を初期化
+                    this.initializeExpressionValues();
+                    
+                    // VRM固有表情を生成
+                    this.generateDynamicExpressions();
+                    
+                    // Idle4アイドルアニメーション開始
+                    await this.startIdleLoop();
+                    
+                } catch (error) {
+                    console.error('キャラクター読み込みエラー:', error);
+                    this.updateStatus(`読み込みエラー: ${error.message}`);
+                }
+            }
+            
+            async playAnimation(animationName) {
+                if (!this.currentVRM || !this.vrmMixer) {
+                    console.warn('VRM not loaded');
+                    return;
+                }
+                
+                try {
+                    // ループスムージングのクリーンアップ
+                this.stopLoopSmoothing();
+                    
+                    // 前のアニメーションを滑らかにフェードアウト
+                    if (this.currentAction) {
+                        this.currentAction.fadeOut(0.3); // 0.3秒でフェードアウト
+                        this.currentAction = null;
+                    }
+                    
+                    const animationPath = `${this.animationBasePath}${animationName}.vrma`;
+                    
+                    const animationGltf = await new Promise((resolve, reject) => {
+                        this.loader.load(animationPath, resolve, undefined, reject);
+                    });
+                    
+                    const vrmAnimations = animationGltf.userData.vrmAnimations;
+                    if (vrmAnimations && vrmAnimations.length > 0) {
+                        const clip = createVRMAnimationClip(vrmAnimations[0], this.currentVRM);
+                        this.currentAction = this.vrmMixer.clipAction(clip);
+                        
+                        // ループしないワンショットアニメーションに設定
+                        this.currentAction.setLoop(THREE.LoopOnce);
+                        this.currentAction.clampWhenFinished = true; // 最後のフレームで停止
+                        
+                        // 滑らかにフェードイン
+                        this.currentAction.fadeIn(0.3); // 0.3秒でフェードイン
+                        this.currentAction.play();
+                        
+                        // 前のリスナーをクリア
+                        if (this.animationFinishedListener && this.vrmMixer) {
+                            this.vrmMixer.removeEventListener('finished', this.animationFinishedListener);
+                        }
+                        
+                        // 新しいリスナーを設定
+                        this.animationFinishedListener = (event) => {
+                            if (event.action === this.currentAction) {
+                                console.log(`アニメーション ${animationName} 完了 - アイドルモーションに移行`);
+                                // リスナーをクリアしてから遷移
+                                if (this.vrmMixer) {
+                                    this.vrmMixer.removeEventListener('finished', this.animationFinishedListener);
+                                }
+                                this.animationFinishedListener = null;
+                                this.transitionToIdleAnimation();
+                            }
+                        };
+                        this.vrmMixer.addEventListener('finished', this.animationFinishedListener);
+                        
+                        this.updateStatus(`アニメーション再生: ${animationName}`);
+                        console.log(`アニメーション開始: ${animationName} (自動アイドル移行設定済み)`);
+                    }
+                    
+                } catch (error) {
+                    console.error('アニメーション読み込みエラー:', error);
+                    this.updateStatus(`アニメーションエラー: ${animationName}`);
+                    // エラー時もアイドルアニメーションに戻る
+                    setTimeout(() => this.transitionToIdleAnimation(), 300);
+                }
+            }
+            
+            async playIdleAnimation() {
+                await this.startIdleLoop();
+            }
+            
+            // アイドルアニメーションへの滑らかな遷移（Tポーズ防止最適化）
+            async transitionToIdleAnimation() {
+                if (!this.currentVRM || !this.vrmMixer) {
+                    return;
+                }
+                
+                try {
+                    // アイドルアニメーションを先に準備（重み0で開始）
+                    const animationPath = `${this.animationBasePath}Idle4.vrma`;
+                    
+                    const animationGltf = await new Promise((resolve, reject) => {
+                        this.loader.load(
+                            animationPath,
+                            resolve,
+                            progress => console.log(`アイドル準備進捗: ${(progress.loaded / progress.total * 100).toFixed(1)}%`),
+                            reject
+                        );
+                    });
+                    
+                    const vrmAnimation = animationGltf.userData.vrmAnimations?.[0];
+                    if (!vrmAnimation) {
+                        throw new Error('Idle4.vrmaのVRMアニメーションが見つかりません');
+                    }
+                    
+                    // 新しいアイドルアクションを作成（重み0で開始）
+                    const newIdleAction = this.vrmMixer.clipAction(vrmAnimation.createAnimationClip(this.currentVRM));
+                    newIdleAction.enabled = true;
+                    newIdleAction.setLoop(THREE.LoopRepeat);
+                    newIdleAction.clampWhenFinished = false;
+                    newIdleAction.setEffectiveWeight(0); // 最初は重み0
+                    newIdleAction.play();
+                    
+                    // クロスフェード実行（Tポーズを完全に回避）
+                    if (this.currentAction) {
+                        // 同時にフェードアウトとフェードイン
+                        this.currentAction.fadeOut(0.3);
+                        newIdleAction.fadeIn(0.3);
+                        
+                        console.log('クロスフェード遷移開始 - Tポーズ回避');
+                    } else {
+                        // 現在のアクションがない場合は直接フェードイン
+                        newIdleAction.fadeIn(0.3);
+                    }
+                    
+                    // アクションとクリップを更新
+                    this.currentAction = newIdleAction;
+                    this.currentIdleClip = vrmAnimation.createAnimationClip(this.currentVRM);
+                    
+                    // ループスムージング開始
+                    setTimeout(() => {
+                        this.stopLoopSmoothing(); // 既存のスムージングを停止
+                        this.startLoopSmoothing(); // 新しいスムージングを開始
+                    }, 350); // フェードイン完了後に開始
+                    
+                } catch (error) {
+                    console.error('アイドル遷移エラー:', error);
+                    // フォールバック: 通常の遷移
+                    if (this.currentAction) {
+                        this.currentAction.fadeOut(0.3);
+                    }
+                    setTimeout(async () => {
+                        await this.startIdleLoop();
+                    }, 150);
+                }
+            }
+            
+            // ランダムアイドルモーションの開始 - カクつき防止最適化
+// 新しいアイドルループシステム
+            async startIdleLoop() {
+                if (!this.currentVRM || !this.vrmMixer) {
+                    console.warn('VRM not loaded');
+                    return;
+                }
+
+                const idleAnimations = ['Idle1.vrma', 'Idle2.vrma', 'Idle3.vrma', 'Idle4.vrma'];
+                let currentIdleName = '';
+                let currentIdleAction = null;
+                
+                // アイドルループを開始する関数
+                const playNextIdle = async () => {
+                    try {
+                        // ランダムで次のアイドルモーションを選択
+                        const previousIdleName = currentIdleName;
+                        let selectedAnimation;
+                        
+                        // 現在のモーションと異なるモーションを優先して選択
+                        const availableAnimations = idleAnimations.filter(name => name !== previousIdleName);
+                        selectedAnimation = availableAnimations[Math.floor(Math.random() * availableAnimations.length)];
+                        
+                        currentIdleName = selectedAnimation;
+                        const animationPath = `${this.animationBasePath}${currentIdleName}`;
+                        
+                        console.log(`次のアイドルモーションを読み込み中: ${currentIdleName}`);
+
+                        const animationGltf = await new Promise((resolve, reject) => {
+                            this.loader.load(animationPath, resolve, undefined, reject);
+                        });
+
+                        const vrmAnimation = animationGltf.userData.vrmAnimations?.[0];
+                        if (!vrmAnimation) {
+                            throw new Error(`VRMアニメーションが見つかりません: ${currentIdleName}`);
+                        }
+
+                        const clip = createVRMAnimationClip(vrmAnimation, this.currentVRM);
+                        const nextAction = this.vrmMixer.clipAction(clip);
+                        
+                        nextAction.setLoop(THREE.LoopOnce); // ワンショット再生に設定
+                        nextAction.clampWhenFinished = true; // アニメーション終了時に最後のフレームで停止
+                        
+                        // 前のアイドルアクションを停止
+                        if (currentIdleAction) {
+                            currentIdleAction.stop();
+                        }
+                        
+                        // 新しいアクションに置き換え
+                        this.currentAction = nextAction;
+                        currentIdleAction = nextAction;
+                        
+                        // 再生
+                        nextAction.play();
+                        
+                        this.updateStatus(`アイドルモーション再生中: ${currentIdleName}`);
+                        
+                    } catch (error) {
+                        console.error('アイドルモーション再生エラー:', error);
+                        this.updateStatus(`アイドルモーションエラー: ${currentIdleName}`);
+                    }
+                };
+
+                // アニメーション終了時に次のモーションを再生
+                this.vrmMixer.addEventListener('finished', (event) => {
+                    if (event.action === this.currentAction) {
+                        console.log(`アイドルモーション ${currentIdleName} 終了。次のモーションに遷移します。`);
+                        playNextIdle();
+                    }
+                });
+
+                // 初回再生
+                playNextIdle();
+            }
+            
+            setExpression(expressionName) {
+                if (!this.currentVRM) return;
+                
+                try {
+                    // まず全ての表情をリセット
+                    this.resetAllExpressionsSync();
+                    
+                    // 表情マッピング
+                    const expressionMapping = {
+                        'happy': 'happy',
+                        'angry': 'angry', 
+                        'sad': 'sad',
+                        'surprised': 'surprised',
+                        'relaxed': 'relaxed',
+                        'neutral': 'neutral'
+                    };
+                    
+                    const vrmExpression = expressionMapping[expressionName];
+                    if (vrmExpression && this.currentVRM.expressionManager) {
+                        // 滑らかな表情変化を使用
+                        this.setSmoothExpression(vrmExpression, 1000);
+                    }
+                } catch (error) {
+                    console.error('表情設定エラー:', error);
+                }
+            }
+            
+            setSmoothExpression(expressionName, duration = 1200) {
+                if (!this.currentVRM) return;
+                
+                try {
+                    // 表情マッピング
+                    const expressionMapping = {
+                        'happy': 'happy',
+                        'angry': 'angry', 
+                        'sad': 'sad',
+                        'surprised': 'surprised',
+                        'relaxed': 'relaxed',
+                        'neutral': 'neutral'
+                    };
+                    
+                    const vrmExpression = expressionMapping[expressionName];
+                    if (vrmExpression && this.currentVRM.expressionManager) {
+                        // まず他の表情を滑らかにフェードアウト
+                        this.fadeOutOtherExpressions(vrmExpression, duration * 0.6);
+                        
+                        // 少し遅延して新しい表情をフェードイン
+                        setTimeout(() => {
+                            this.animateExpressionTo(vrmExpression, 1.0, duration * 0.8);
+                        }, duration * 0.2); // 20%遅延後にフェードイン開始
+                        
+                        this.updateStatus(`表情変更: ${expressionName} (滑らか)`);
+                        console.log(`滑らか表情変更: ${expressionName} (${duration}ms)`);
+                    }
+                } catch (error) {
+                    console.error('滑らか表情設定エラー:', error);
+                }
+            }
+            
+            fadeOutOtherExpressions(excludeExpression, duration = 800) {
+                if (!this.currentVRM || !this.currentVRM.expressionManager) return;
+                
+                // 除外する表情以外を全てフェードアウト
+                Object.keys(this.currentVRM.expressionManager.expressionMap).forEach(expressionName => {
+                    if (expressionName !== excludeExpression && expressionName !== 'blink') {
+                        this.animateExpressionTo(expressionName, 0.0, duration);
+                    }
+                });
+            }
+            
+            startBlinking() {
+                if (!this.currentVRM) return;
+                
+                const blink = () => {
+                    if (this.currentVRM && this.currentVRM.expressionManager) {
+                        // 自然な瞬きアニメーション（150ms で閉じて、150ms で開く）
+                        this.animateExpressionTo('blink', 1.0, 150);
+                        
+                        // 150ms後に目を開く
+                        setTimeout(() => {
+                            if (this.currentVRM && this.currentVRM.expressionManager) {
+                                this.animateExpressionTo('blink', 0.0, 150);
+                            }
+                        }, 150);
+                    }
+                    
+                    // 次のまばたきをランダムな間隔で設定
+                    const nextBlink = Math.random() * 3000 + 1000; // 1-4秒
+                    this.blinkTimer = setTimeout(blink, nextBlink);
+                };
+                
+                // 最初のまばたきを設定
+                this.blinkTimer = setTimeout(blink, 2000);
+            }
+            
+            async playSampleVoice() {
+                if (!this.currentVRM) {
+                    this.updateStatus('VRMモデルが読み込まれていません');
+                    return;
+                }
+                
+                if (this.isLipSyncActive) {
+                    this.stopLipSync();
+                    return;
+                }
+                
+                try {
+                    this.updateStatus('サンプル音声再生開始...');
+                    
+                    // Web Audio API初期化
+                    this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    
+                    // サンプル音声ファイルを読み込み（キャッシュバスターを使用）
+                    const timestamp = new Date().getTime();
+                    const response = await fetch(`../../backend/src/voice/voice.wav?t=${timestamp}`);
+                    const arrayBuffer = await response.arrayBuffer();
+                    const audioBuffer = await this.audioContext.decodeAudioData(arrayBuffer);
+                    
+                    // オーディオ解析設定
+                    const source = this.audioContext.createBufferSource();
+                    source.buffer = audioBuffer;
+                    
+                    this.analyser = this.audioContext.createAnalyser();
+                    const gainNode = this.audioContext.createGain();
+                    this.analyser.fftSize = 2048;
+                    this.analyser.smoothingTimeConstant = 0.8;
+                    this.dataArray = new Uint8Array(this.analyser.fftSize);
+                    
+                    // オーディオノード接続
+                    source.connect(this.analyser);
+                    this.analyser.connect(gainNode);
+                    gainNode.connect(this.audioContext.destination);
+                    
+                    // 再生終了時の処理
+                    source.onended = () => {
+                        this.stopLipSync();
+                        this.updateStatus('サンプル音声再生完了');
+                        console.log('音声再生完了');
+                        
+                        // 音声終了後、表情を滑らかにノーマルに戻す（2.5秒後に開始、1.5秒かけて）
+                        setTimeout(() => {
+                            console.log('[表情リセット] 音声終了後、表情をニュートラルに戻します');
+                            this.setSmoothExpression('neutral', 1500);
+                        }, 2500);
+                    };
+                    
+                    // 音声再生開始
+                    source.start();
+                    this.isLipSyncActive = true;
+                    
+                    // 口パク変数初期化
+                    this.lastVowelChangeTime = performance.now();
+                    this.currentVowelExpression = 'a';
+                    
+                    // サンプル音声ボタンテキスト更新
+                    this.sampleVoiceBtn.textContent = '音声停止';
+                    
+                    this.updateStatus('音声再生中（口パク付き）');
+                    console.log(`口パク付き音声再生開始: ${audioBuffer.duration.toFixed(2)}秒`);
+                    
+                    // リアルタイム口パクアニメーション開始
+                    this.startLipSyncAnimation();
+                    
+                } catch (error) {
+                    console.error('音声再生エラー:', error);
+                    this.updateStatus(`音声再生エラー: ${error.message}`);
+                    this.stopLipSync();
+                }
+            }
+            
+            stopCurrentAnimation() {
+                // ループスムージングのクリーンアップ
+                this.stopLoopSmoothing();
+                
+                if (this.currentAction) {
+                    this.currentAction.fadeOut(0.3); // 0.3秒で滑らかに停止
+                    this.currentAction = null;
+                }
+                
+                // 滑らかにIdle4アイドルアニメーションに遷移
+                setTimeout(() => {
+                    this.transitionToIdleAnimation();
+                }, 150);
+                
+                this.updateStatus('アニメーション停止中 - Idle4アイドル状態に移行');
+            }
+            
+            resetAllExpressions() {
+                if (!this.currentVRM || !this.currentVRM.expressionManager) {
+                    this.updateStatus('VRMモデルが読み込まれていません');
+                    return;
+                }
+                
+                try {
+                    // 全ての表情を0にアニメーション付きでリセット
+                    const expressions = Object.keys(this.currentVRM.expressionManager.expressionMap);
+                    expressions.forEach(expressionName => {
+                        this.targetExpressionValues[expressionName] = 0.0;
+                    });
+                    
+                    // アニメーション設定
+                    this.expressionAnimationDuration = 600; // 少し速めのリセット
+                    this.expressionAnimationStartTime = performance.now();
+                    this.isExpressionAnimating = true;
+                    
+                    // アニメーション開始
+                    this.startExpressionAnimationLoop();
+                    
+                    this.updateStatus('全ての表情をリセット中...');
+                    console.log('全表情アニメーションリセット開始');
+                } catch (error) {
+                    console.error('表情リセットエラー:', error);
+                    this.updateStatus(`表情リセットエラー: ${error.message}`);
+                }
+            }
+            
+            // 常時モーション途中切り替え・完全滑らかシステム
+            startLoopSmoothing() {
+                if (!this.currentAction || !this.currentIdleClip) {
+                    return;
+                }
+                
+                const clipDuration = this.currentIdleClip.duration;
+                
+                // 状態管理変数
+                let nextIdleMotion = null;
+                let isTransitioning = false;
+                let switchDecisionCooldown = 0;
+                let transitionStartTime = 0;
+                const transitionDuration = 1.0; // 1秒のクロスフェード時間
+                
+                // 複数フレームにわたる時間補間バッファ
+                let timeHistory = [];
+                let lastRealTime = performance.now();
+                let lastSwitchTime = performance.now(); // 初期化
+                
+                const constantSmoothLoop = () => {
+                    if (!this.currentAction || this.currentAction._clip !== this.currentIdleClip) {
+                        return;
+                    }
+                    
+                    const now = performance.now();
+                    const realDelta = (now - lastRealTime) / 1000;
+                    lastRealTime = now;
+                    
+                    // フレーム時間履歴を記録
+                    timeHistory.push(realDelta);
+                    if (timeHistory.length > 10) {
+                        timeHistory.shift();
+                    }
+                    
+                    // 平滑化されたデルタタイムを計算
+                    const avgDelta = timeHistory.reduce((sum, delta) => sum + delta, 0) / timeHistory.length;
+                    const smoothDelta = this.lerp(realDelta, avgDelta, 0.7);
+                    
+                    switchDecisionCooldown -= smoothDelta;
+                    
+                    const currentTime = this.currentAction.time;
+                    const normalizedTime = currentTime % clipDuration;
+                    
+                    // 定期的にランダム切り替えを判定（3秒固定間隔、モーション終了に依存しない）
+                    if (switchDecisionCooldown <= 0 && !isTransitioning && !nextIdleMotion) {
+                        const switchChance = Math.random();
+                        
+                        if (switchChance < 0.6) {
+                            // 60%の確率で同じモーションを継続
+                            this.prepareSameIdleMotion().then(motion => {
+                                if (motion) {
+                                    nextIdleMotion = motion;
+                                    console.log(`同モーション継続準備: ${motion.name} (確率60%)`);
+                                }
+                            });
+                        } else {
+                            // 40%の確率で4種からランダム選択（結果的に10%は同じモーションになる可能性）
+                            this.prepareRandomIdleMotionFromAll().then(motion => {
+                                if (motion) {
+                                    nextIdleMotion = motion;
+                                    console.log(`ランダム選択準備: ${motion.name} (確率40%からランダム)`);
+                                }
+                            });
+                        }
+                        
+                        // 次の判定まで3秒固定
+                        switchDecisionCooldown = 3.0;
+                    }
+                    
+                    // 準備完了後すぐに途中切り替え開始（終了待機なし）
+                    if (nextIdleMotion && !isTransitioning) {
+                        isTransitioning = true;
+                        transitionStartTime = now;
+                        
+                        // 新しいモーションを任意の時点から開始（より自然な切り替え）
+                        const startOffset = Math.random() * nextIdleMotion.clip.duration * 0.3; // 最初の30%内からランダム開始
+                        nextIdleMotion.action.setEffectiveWeight(0);
+                        nextIdleMotion.action.time = startOffset;
+                        nextIdleMotion.action.play();
+                        
+                        console.log(`モーション途中切り替え開始: ${nextIdleMotion.name} (開始位置: ${startOffset.toFixed(2)}秒)`);
+                    }
+                    
+                    // 常時クロスフェード進行（1秒間）
+                    if (isTransitioning && nextIdleMotion) {
+                        const elapsedTransition = (now - transitionStartTime) / 1000;
+                        const fadeProgress = Math.min(1.0, elapsedTransition / transitionDuration);
+                        const smoothProgress = this.easeInOutQuart(fadeProgress);
+                        
+                        const currentWeight = 1.0 - smoothProgress;
+                        const nextWeight = smoothProgress;
+                        
+                        this.currentAction.setEffectiveWeight(currentWeight);
+                        nextIdleMotion.action.setEffectiveWeight(nextWeight);
+                        
+                        // 切り替え完了
+                        if (fadeProgress >= 1.0) {
+                            // 古いアクションを停止
+                            this.currentAction.stop();
+                            
+                            // 新しいアクションに更新
+                            this.currentAction = nextIdleMotion.action;
+                            this.currentIdleClip = nextIdleMotion.clip;
+                            this.currentAction.setEffectiveWeight(1.0);
+                            
+                            // 状態リセット
+                            nextIdleMotion = null;
+                            isTransitioning = false;
+                            
+                            console.log('モーション途中切り替え完了 - 完全滑らか遷移達成');
+                        }
+                    }
+                    
+                    // 通常の滑らか再生（切り替え中以外）
+                    if (!isTransitioning && this.currentAction && this.currentAction.isRunning()) {
+                        // 極小の重み揺らぎで自然さを演出
+                        const weightFluctuation = 0.998 + (Math.sin(now * 0.01) * 0.002);
+                        this.currentAction.setEffectiveWeight(weightFluctuation);
+                    }
+                    
+                    this.loopSmoothingFrame = requestAnimationFrame(constantSmoothLoop);
+                };
+                
+                // 初期化時に最初の切り替え判定時間を設定（3秒固定）
+                switchDecisionCooldown = 3.0;
+                lastSwitchTime = performance.now();
+                
+                this.loopSmoothingFrame = requestAnimationFrame(constantSmoothLoop);
+                console.log('常時モーション途中切り替え・完全滑らかシステム開始 (60%継続+40%ランダム=70%/30%)');
+            }
+            
+            // アニメーションクリップのループ最適化
+            optimizeAnimationClipForLoop() {
+                if (!this.currentIdleClip) return;
+                
+                try {
+                    // クリップのトラックを解析
+                    this.currentIdleClip.tracks.forEach(track => {
+                        if (track.times && track.times.length > 1) {
+                            const values = track.values;
+                            const times = track.times;
+                            const lastIndex = times.length - 1;
+                            
+                            // 最初と最後の値の差を計算
+                            const valueSize = values.length / times.length;
+                            const startValues = values.slice(0, valueSize);
+                            const endValues = values.slice(-valueSize);
+                            
+                            // 終端値を開始値に近づけて完全ループを作成
+                            for (let i = 0; i < valueSize; i++) {
+                                const diff = endValues[i] - startValues[i];
+                                if (Math.abs(diff) > 0.001) {
+                                    // 段階的に補正（急激な変更を避ける）
+                                    values[values.length - valueSize + i] = this.lerp(endValues[i], startValues[i], 0.8);
+                                }
+                            }
+                        }
+                    });
+                    
+                    console.log('アニメーションクリップのループポイントを最適化');
+                } catch (error) {
+                    console.warn('クリップ最適化でエラー（継続可能）:', error);
+                }
+            }
+            
+            // 線形補間ヘルパー
+            lerp(start, end, factor) {
+                return start + (end - start) * Math.max(0, Math.min(1, factor));
+            }
+            
+            // 同じアイドルモーション継続準備
+            async prepareSameIdleMotion() {
+                try {
+                    // 現在のモーション名を取得
+                    let currentIdleName = 'Idle4.vrma'; // デフォルト
+                    if (this.currentIdleClip && this.currentIdleClip.name) {
+                        const match = this.currentIdleClip.name.match(/Idle\d\.vrma/);
+                        if (match) {
+                            currentIdleName = match[0];
+                        }
+                    }
+                    
+                    const animationPath = `${this.animationBasePath}${currentIdleName}`;
+                    
+                    console.log(`同じアイドルモーション継続: ${currentIdleName}`);
+                    
+                    const animationGltf = await new Promise((resolve, reject) => {
+                        this.loader.load(animationPath, resolve, undefined, reject);
+                    });
+                    
+                    const vrmAnimation = animationGltf.userData.vrmAnimations?.[0];
+                    if (!vrmAnimation) {
+                        throw new Error(`${currentIdleName}のVRMアニメーションが見つかりません`);
+                    }
+                    
+                    const animationClip = vrmAnimation.createAnimationClip(this.currentVRM);
+                    const nextAction = this.vrmMixer.clipAction(animationClip);
+                    nextAction.enabled = true;
+                    nextAction.setLoop(THREE.LoopRepeat);
+                    nextAction.clampWhenFinished = false;
+                    nextAction.time = 0;
+                    
+                    return {
+                        name: currentIdleName,
+                        action: nextAction,
+                        clip: animationClip
+                    };
+                    
+                } catch (error) {
+                    console.error('同じアイドルモーション継続準備エラー:', error);
+                    return null;
+                }
+            }
+            
+            // 4種すべてからランダムアイドルモーション準備
+            async prepareRandomIdleMotionFromAll() {
+                try {
+                    const idleAnimations = ['Idle1.vrma', 'Idle2.vrma', 'Idle3.vrma', 'Idle4.vrma'];
+                    
+                    // 4種すべてからランダムに選択（同じモーションの可能性も含む）
+                    const selectedAnimation = idleAnimations[Math.floor(Math.random() * idleAnimations.length)];
+                    const animationPath = `${this.animationBasePath}${selectedAnimation}`;
+                    
+                    // 現在のモーション名を取得
+                    let currentIdleName = 'Idle4.vrma'; // デフォルト
+                    if (this.currentIdleClip && this.currentIdleClip.name) {
+                        const match = this.currentIdleClip.name.match(/Idle\d\.vrma/);
+                        if (match) {
+                            currentIdleName = match[0];
+                        }
+                    }
+                    
+                    const isSameMotion = selectedAnimation === currentIdleName;
+                    console.log(`4種からランダム選択: ${currentIdleName} → ${selectedAnimation} ${isSameMotion ? '(同じ)' : '(変更)'}`);
+                    
+                    const animationGltf = await new Promise((resolve, reject) => {
+                        this.loader.load(
+                            animationPath,
+                            resolve,
+                            progress => console.log(`${selectedAnimation} 読み込み進捗: ${(progress.loaded / progress.total * 100).toFixed(1)}%`),
+                            reject
+                        );
+                    });
+                    
+                    const vrmAnimation = animationGltf.userData.vrmAnimations?.[0];
+                    if (!vrmAnimation) {
+                        throw new Error(`${selectedAnimation}のVRMアニメーションが見つかりません`);
+                    }
+                    
+                    const animationClip = vrmAnimation.createAnimationClip(this.currentVRM);
+                    const nextAction = this.vrmMixer.clipAction(animationClip);
+                    nextAction.enabled = true;
+                    nextAction.setLoop(THREE.LoopRepeat);
+                    nextAction.clampWhenFinished = false;
+                    nextAction.time = 0;
+                    
+                    return {
+                        name: selectedAnimation,
+                        action: nextAction,
+                        clip: animationClip,
+                        isSameMotion: isSameMotion
+                    };
+                    
+                } catch (error) {
+                    console.error('4種ランダムアイドルモーション準備エラー:', error);
+                    
+                    // フォールバック: Idle4.vrmaを使用
+                    try {
+                        const fallbackPath = `${this.animationBasePath}Idle4.vrma`;
+                        const animationGltf = await new Promise((resolve, reject) => {
+                            this.loader.load(fallbackPath, resolve, undefined, reject);
+                        });
+                        
+                        const vrmAnimation = animationGltf.userData.vrmAnimations?.[0];
+                        const animationClip = vrmAnimation.createAnimationClip(this.currentVRM);
+                        const nextAction = this.vrmMixer.clipAction(animationClip);
+                        nextAction.enabled = true;
+                        nextAction.setLoop(THREE.LoopRepeat);
+                        nextAction.clampWhenFinished = false;
+                        nextAction.time = 0;
+                        
+                        console.log('フォールバック: Idle4.vrmaを使用');
+                        return {
+                            name: 'Idle4.vrma',
+                            action: nextAction,
+                            clip: animationClip,
+                            isSameMotion: false
+                        };
+                        
+                    } catch (fallbackError) {
+                        console.error('フォールバックも失敗:', fallbackError);
+                        return null;
+                    }
+                }
+            }
+            
+            // ランダムアイドルモーション準備（既存の除外版、互換性維持用）
+            async prepareRandomIdleMotion() {
+                try {
+                    const idleAnimations = ['Idle1.vrma', 'Idle2.vrma', 'Idle3.vrma', 'Idle4.vrma'];
+                    
+                    // 現在のアニメーション名を取得
+                    let currentIdleName = 'Idle4.vrma'; // デフォルト
+                    if (this.currentIdleClip && this.currentIdleClip.name) {
+                        const match = this.currentIdleClip.name.match(/Idle\d\.vrma/);
+                        if (match) {
+                            currentIdleName = match[0];
+                        }
+                    }
+                    
+                    // 現在のアニメーション以外の選択肢を作成
+                    const availableAnimations = idleAnimations.filter(name => name !== currentIdleName);
+                    
+                    // ランダムに選択
+                    const selectedAnimation = availableAnimations[Math.floor(Math.random() * availableAnimations.length)];
+                    const animationPath = `${this.animationBasePath}${selectedAnimation}`;
+                    
+                    console.log(`ランダムアイドルモーション選択: ${currentIdleName} → ${selectedAnimation}`);
+                    
+                    const animationGltf = await new Promise((resolve, reject) => {
+                        this.loader.load(
+                            animationPath,
+                            resolve,
+                            progress => console.log(`${selectedAnimation} 読み込み進捗: ${(progress.loaded / progress.total * 100).toFixed(1)}%`),
+                            reject
+                        );
+                    });
+                    
+                    const vrmAnimation = animationGltf.userData.vrmAnimations?.[0];
+                    if (!vrmAnimation) {
+                        throw new Error(`${selectedAnimation}のVRMアニメーションが見つかりません`);
+                    }
+                    
+                    const animationClip = vrmAnimation.createAnimationClip(this.currentVRM);
+                    const nextAction = this.vrmMixer.clipAction(animationClip);
+                    nextAction.enabled = true;
+                    nextAction.setLoop(THREE.LoopRepeat);
+                    nextAction.clampWhenFinished = false;
+                    nextAction.time = 0;
+                    
+                    return {
+                        name: selectedAnimation,
+                        action: nextAction,
+                        clip: animationClip
+                    };
+                    
+                } catch (error) {
+                    console.error('ランダムアイドルモーション準備エラー:', error);
+                    return null;
+                }
+            }
+            
+            // 次のアイドルアクションをプリロード（互換性維持用）
+            async preloadNextIdleAction() {
+                const motion = await this.prepareRandomIdleMotion();
+                return motion ? motion.action : null;
+            }
+            
+            // ループスムージング停止
+            stopLoopSmoothing() {
+                if (this.loopSmoothingFrame) {
+                    cancelAnimationFrame(this.loopSmoothingFrame);
+                    this.loopSmoothingFrame = null;
+                }
+                
+                this.currentIdleClip = null;
+            }
+            
+            // 超高精度イージング関数群
+            easeInOutSine(t) {
+                return -(Math.cos(Math.PI * t) - 1) / 2;
+            }
+            
+            easeInOutQuart(t) {
+                return t < 0.5 ? 8 * t * t * t * t : 1 - Math.pow(-2 * t + 2, 4) / 2;
+            }
+            
+            // 同期的表情リセット（表情切り替え用）
+            resetAllExpressionsSync() {
+                if (!this.currentVRM || !this.currentVRM.expressionManager) {
+                    return;
+                }
+                
+                try {
+                    const expressions = Object.keys(this.currentVRM.expressionManager.expressionMap);
+                    expressions.forEach(expressionName => {
+                        this.currentVRM.expressionManager.setValue(expressionName, 0.0);
+                        this.currentExpressionValues[expressionName] = 0.0;
+                        this.targetExpressionValues[expressionName] = 0.0;
+                    });
+                    this.currentVRM.expressionManager.update();
+                    console.log('表情を同期的にリセット');
+                } catch (error) {
+                    console.error('同期表情リセットエラー:', error);
+                }
+            }
+            
+            generateDynamicExpressions() {
+                if (!this.currentVRM || !this.currentVRM.expressionManager) {
+                    return;
+                }
+                
+                // 動的表情グリッドをクリア
+                this.dynamicExpressionsGrid.innerHTML = '';
+                
+                const expressions = Object.keys(this.currentVRM.expressionManager.expressionMap);
+                console.log(`VRM固有表情を生成: ${expressions.length}個`);
+                
+                if (expressions.length === 0) {
+                    this.dynamicExpressionsGrid.innerHTML = '<p style="color: #ccc; font-style: italic;">利用可能な表情がありません</p>';
+                    return;
+                }
+                
+                // 基本表情（happy, angry, sad等）を除外
+                const basicExpressions = ['happy', 'angry', 'sad', 'surprised', 'relaxed', 'neutral'];
+                const vrmSpecificExpressions = expressions.filter(expr => {
+                    const lowerExpr = expr.toLowerCase();
+                    return !basicExpressions.some(basic => lowerExpr.includes(basic));
+                });
+                
+                vrmSpecificExpressions.forEach(expressionName => {
+                    const button = document.createElement('button');
+                    button.textContent = expressionName;
+                    button.className = 'expression-btn';
+                    
+                    // 表情タイプに応じてクラスを追加
+                    const lowerName = expressionName.toLowerCase();
+                    if (this.isLipSyncExpression(lowerName)) {
+                        button.classList.add('mouth-expression');
+                    } else if (this.isEyeExpression(lowerName)) {
+                        button.classList.add('eye-expression');
+                    }
+                    
+                    // クリックイベント
+                    button.addEventListener('click', () => {
+                        this.setVRMExpression(expressionName, 1.0);
+                    });
+                    
+                    this.dynamicExpressionsGrid.appendChild(button);
+                });
+                
+                console.log(`VRM固有表情ボタン生成完了: ${vrmSpecificExpressions.length}個`);
+            }
+            
+            isLipSyncExpression(expressionName) {
+                const mouthKeywords = ['a', 'i', 'u', 'e', 'o', 'aa', 'ih', 'ou', 'ee', 'oh', 'mouth', 'lip'];
+                return mouthKeywords.some(keyword => expressionName.includes(keyword));
+            }
+            
+            isEyeExpression(expressionName) {
+                const eyeKeywords = ['blink', 'eye', 'wink', 'look'];
+                return eyeKeywords.some(keyword => expressionName.includes(keyword));
+            }
+            
+            setVRMExpression(expressionName, value = 1.0) {
+                if (!this.currentVRM || !this.currentVRM.expressionManager) {
+                    return;
+                }
+                
+                try {
+                    // まず全ての表情をリセット
+                    this.resetAllExpressionsSync();
+                    
+                    // アニメーション付きで表情を設定
+                    setTimeout(() => {
+                        this.animateExpressionTo(expressionName, value);
+                    }, 100); // リセット後に少し遅延して適用
+                    this.updateStatus(`表情設定: ${expressionName} (${(value * 100).toFixed(0)}%)`);
+                    console.log(`VRM表情設定: ${expressionName} = ${value}`);
+                } catch (error) {
+                    console.error('VRM表情設定エラー:', error);
+                    this.updateStatus(`表情設定エラー: ${error.message}`);
+                }
+            }
+            
+            initializeExpressionValues() {
+                if (!this.currentVRM || !this.currentVRM.expressionManager) {
+                    return;
+                }
+                
+                this.currentExpressionValues = {};
+                this.targetExpressionValues = {};
+                
+                // 全ての表情を0で初期化
+                Object.keys(this.currentVRM.expressionManager.expressionMap).forEach(expressionName => {
+                    this.currentExpressionValues[expressionName] = 0.0;
+                    this.targetExpressionValues[expressionName] = 0.0;
+                });
+                
+                console.log(`表情値を初期化: ${Object.keys(this.currentExpressionValues).length}個`);
+            }
+            
+            animateExpressionTo(expressionName, targetValue, duration = 800) {
+                if (!this.currentVRM || !this.currentVRM.expressionManager) {
+                    return;
+                }
+                
+                // 対象の表情が存在するかチェック
+                if (!this.currentVRM.expressionManager.expressionMap[expressionName]) {
+                    console.warn(`表情が見つかりません: ${expressionName}`);
+                    return;
+                }
+                
+                // 初期化されていない場合は初期化
+                if (this.currentExpressionValues[expressionName] === undefined) {
+                    this.currentExpressionValues[expressionName] = 0.0;
+                }
+                
+                // ターゲット値を設定
+                this.targetExpressionValues[expressionName] = Math.max(0, Math.min(1, targetValue));
+                
+                // アニメーション設定
+                this.expressionAnimationDuration = duration;
+                this.expressionAnimationStartTime = performance.now();
+                this.isExpressionAnimating = true;
+                
+                console.log(`表情アニメーション開始: ${expressionName} -> ${targetValue}`);
+                
+                // アニメーションループを開始
+                this.startExpressionAnimationLoop();
+            }
+            
+            startExpressionAnimationLoop() {
+                if (this.expressionAnimationFrame) {
+                    cancelAnimationFrame(this.expressionAnimationFrame);
+                }
+                
+                const animateFrame = () => {
+                    if (!this.isExpressionAnimating || !this.currentVRM || !this.currentVRM.expressionManager) {
+                        return;
+                    }
+                    
+                    const currentTime = performance.now();
+                    const elapsed = currentTime - this.expressionAnimationStartTime;
+                    const progress = Math.min(elapsed / this.expressionAnimationDuration, 1.0);
+                    
+                    // イージング関数（滑らかな変化）
+                    const easedProgress = this.easeInOutCubic(progress);
+                    
+                    let hasChanges = false;
+                    
+                    // 各表情値を補間
+                    Object.keys(this.targetExpressionValues).forEach(expressionName => {
+                        if (!this.currentVRM.expressionManager.expressionMap[expressionName]) {
+                            return;
+                        }
+                        
+                        const currentValue = this.currentExpressionValues[expressionName] || 0.0;
+                        const targetValue = this.targetExpressionValues[expressionName] || 0.0;
+                        
+                        if (Math.abs(currentValue - targetValue) > 0.001) {
+                            // 線形補間
+                            const newValue = this.lerp(currentValue, targetValue, easedProgress);
+                            this.currentExpressionValues[expressionName] = newValue;
+                            
+                            // VRMに適用
+                            try {
+                                this.currentVRM.expressionManager.setValue(expressionName, newValue);
+                                hasChanges = true;
+                            } catch (error) {
+                                console.error(`表情設定エラー ${expressionName}:`, error);
+                            }
+                        }
+                    });
+                    
+                    // VRM更新
+                    if (hasChanges) {
+                        try {
+                            this.currentVRM.expressionManager.update();
+                        } catch (error) {
+                            console.error('表情マネージャー更新エラー:', error);
+                        }
+                    }
+                    
+                    // アニメーション継続判定
+                    if (progress < 1.0) {
+                        this.expressionAnimationFrame = requestAnimationFrame(animateFrame);
+                    } else {
+                        // アニメーション完了
+                        this.isExpressionAnimating = false;
+                        this.expressionAnimationFrame = null;
+                        
+                        // 最終値を確実に設定
+                        Object.keys(this.targetExpressionValues).forEach(expressionName => {
+                            if (this.currentVRM.expressionManager.expressionMap[expressionName]) {
+                                const finalValue = this.targetExpressionValues[expressionName];
+                                this.currentExpressionValues[expressionName] = finalValue;
+                                try {
+                                    this.currentVRM.expressionManager.setValue(expressionName, finalValue);
+                                } catch (error) {
+                                    console.error(`最終値設定エラー ${expressionName}:`, error);
+                                }
+                            }
+                        });
+                        
+                        if (this.currentVRM && this.currentVRM.expressionManager) {
+                            this.currentVRM.expressionManager.update();
+                        }
+                        
+                        console.log('表情アニメーション完了');
+                    }
+                };
+                
+                this.expressionAnimationFrame = requestAnimationFrame(animateFrame);
+            }
+            
+            easeInOutCubic(t) {
+                return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+            }
+            
+            // より滑らかなイージング関数
+            easeInOutQuint(t) {
+                return t < 0.5 ? 16 * t * t * t * t * t : 1 - Math.pow(-2 * t + 2, 5) / 2;
+            }
+            
+            lerp(start, end, t) {
+                return start + (end - start) * t;
+            }
+            
+            stopLipSync() {
+                this.isLipSyncActive = false;
+                
+                // Web Audio API停止
+                if (this.audioContext && this.audioContext.state !== 'closed') {
+                    this.audioContext.close().catch(console.error);
+                    this.audioContext = null;
+                }
+                
+                // 解析変数をクリア
+                this.analyser = null;
+                this.dataArray = null;
+                
+                // アニメーションフレーム停止
+                if (this.lipSyncAnimationFrame) {
+                    cancelAnimationFrame(this.lipSyncAnimationFrame);
+                    this.lipSyncAnimationFrame = null;
+                }
+                
+                // 口の表情をリセット
+                this.resetLipSyncExpressions();
+                
+                // ボタンテキストを戻す
+                this.sampleVoiceBtn.textContent = 'サンプル音声再生';
+                
+                this.updateStatus('音声停止');
+                console.log('口パク停止');
+            }
+            
+            startLipSyncAnimation() {
+                if (!this.analyser || !this.dataArray || !this.isLipSyncActive) {
+                    return;
+                }
+                
+                const animateFrame = () => {
+                    if (!this.isLipSyncActive || !this.analyser || !this.dataArray) {
+                        return;
+                    }
+                    
+                    // オーディオデータ取得
+                    this.analyser.getByteTimeDomainData(this.dataArray);
+                    
+                    // RMS（音量）計算
+                    let sum = 0;
+                    for (let i = 0; i < this.dataArray.length; i++) {
+                        const val = (this.dataArray[i] - 128) / 128;
+                        sum += val * val;
+                    }
+                    const rms = Math.sqrt(sum / this.dataArray.length);
+                    
+                    // 口の開き具合（0.0 to 1.0）
+                    const mouthOpenIntensity = Math.min(rms * 8, 1.0);
+                    
+                    // 母音変更（120msごと）
+                    const now = performance.now();
+                    if (now - this.lastVowelChangeTime > 120) {
+                        if (mouthOpenIntensity > 0.1) {
+                            this.currentVowelExpression = this.lipSyncVowels[Math.floor(Math.random() * this.lipSyncVowels.length)];
+                        } else {
+                            this.currentVowelExpression = 'a';
+                        }
+                        this.lastVowelChangeTime = now;
+                    }
+                    
+                    // 最小強度を保つ
+                    const finalIntensity = Math.max(mouthOpenIntensity, 0.05);
+                    
+                    // 口パク表情を適用
+                    if (finalIntensity > 0.05) {
+                        this.setLipSyncExpression(this.currentVowelExpression, finalIntensity);
+                    }
+                    
+                    // アニメーション継続
+                    this.lipSyncAnimationFrame = requestAnimationFrame(animateFrame);
+                };
+                
+                console.log('リアルタイム口パクアニメーション開始');
+                this.lipSyncAnimationFrame = requestAnimationFrame(animateFrame);
+            }
+            
+            setLipSyncExpression(vowelSound, value = 1.0) {
+                if (!this.currentVRM || !this.currentVRM.expressionManager) {
+                    return;
+                }
+                
+                try {
+                    // 母音に対応する表情名のバリエーション
+                    const expressionVariants = {
+                        'a': ['aa', 'A', 'a', 'Aa'],
+                        'i': ['ih', 'I', 'i', 'Ih'],
+                        'u': ['ou', 'U', 'u', 'Ou'],
+                        'e': ['ee', 'E', 'e', 'Ee'],
+                        'o': ['oh', 'O', 'o', 'Oh']
+                    };
+                    
+                    // 利用可能な表情を探す
+                    const variants = expressionVariants[vowelSound] || [];
+                    let foundExpression = null;
+                    
+                    for (const variant of variants) {
+                        if (this.currentVRM.expressionManager.expressionMap[variant]) {
+                            foundExpression = variant;
+                            break;
+                        }
+                    }
+                    
+                    if (!foundExpression) {
+                        return;
+                    }
+                    
+                    // 他の口の表情をリセット
+                    const allMouthExpressions = ['aa', 'ih', 'ou', 'ee', 'oh', 'A', 'I', 'U', 'E', 'O', 'a', 'i', 'u', 'e', 'o'];
+                    allMouthExpressions.forEach(expr => {
+                        if (this.currentVRM.expressionManager.expressionMap[expr]) {
+                            this.currentVRM.expressionManager.setValue(expr, 0.0);
+                        }
+                    });
+                    
+                    // 対象の表情を設定
+                    this.currentVRM.expressionManager.setValue(foundExpression, value);
+                    this.currentVRM.expressionManager.update();
+                    
+                } catch (error) {
+                    console.error('口パク表情設定エラー:', error);
+                }
+            }
+            
+            resetLipSyncExpressions() {
+                if (!this.currentVRM || !this.currentVRM.expressionManager) {
+                    return;
+                }
+                
+                try {
+                    // 全ての口の表情をリセット
+                    const allMouthExpressions = ['aa', 'ih', 'ou', 'ee', 'oh', 'A', 'I', 'U', 'E', 'O', 'a', 'i', 'u', 'e', 'o'];
+                    allMouthExpressions.forEach(expr => {
+                        if (this.currentVRM.expressionManager.expressionMap[expr]) {
+                            this.currentVRM.expressionManager.setValue(expr, 0.0);
+                        }
+                    });
+                    this.currentVRM.expressionManager.update();
+                } catch (error) {
+                    console.error('口パクリセットエラー:', error);
+                }
+            }
+            
+            disposeCurrentVRM() {
+                if (this.currentAction) {
+                    this.currentAction.fadeOut(0.3);
+                    this.currentAction = null;
+                }
+                
+                // ループスムージングのクリーンアップ
+                this.stopLoopSmoothing();
+                
+                if (this.vrmMixer) {
+                    // イベントリスナーをクリア
+                    if (this.animationFinishedListener) {
+                        this.vrmMixer.removeEventListener('finished', this.animationFinishedListener);
+                        this.animationFinishedListener = null;
+                    }
+                    this.vrmMixer.stopAllAction();
+                    this.vrmMixer = null;
+                }
+                
+                if (this.blinkTimer) {
+                    clearTimeout(this.blinkTimer);
+                    this.blinkTimer = null;
+                }
+                
+                // 口パクリソースをクリーンアップ
+                if (this.isLipSyncActive) {
+                    this.stopLipSync();
+                }
+                
+                // メニュータイマーをクリア（無効化）
+                // this.clearMenuAutoHideTimer();
+                
+                // 音声ポーリングを停止
+                if (this.voicePollingInterval) {
+                    clearInterval(this.voicePollingInterval);
+                    this.voicePollingInterval = null;
+                }
+                
+                // ご機嫌度ポーリングを停止
+                if (this.moodPollingInterval) {
+                    clearInterval(this.moodPollingInterval);
+                    this.moodPollingInterval = null;
+                }
+                
+                // 感情・表情ポーリングを停止
+                if (this.emotionPollingInterval) {
+                    clearInterval(this.emotionPollingInterval);
+                    this.emotionPollingInterval = null;
+                }
+                if (this.expressionPollingInterval) {
+                    clearInterval(this.expressionPollingInterval);
+                    this.expressionPollingInterval = null;
+                }
+                
+                // Live2Dスタイルでは自動更新システムは使用しないため、停止処理は不要
+                console.log('📸 Live2Dスタイルのスクリーンショットシステム (自動更新なし)');
+                
+                if (this.currentVRM) {
+                    this.scene.remove(this.currentVRM.scene);
+                    // VRMリソースの解放
+                    VRMUtils.deepDispose(this.currentVRM.scene);
+                    this.currentVRM = null;
+                }
+            }
+            
+            startAnimationLoop() {
+                const animate = () => {
+                    requestAnimationFrame(animate);
+                    
+                    const deltaTime = this.vrmClock.getDelta();
+                    
+                    // VRMアニメーション更新
+                    if (this.vrmMixer) {
+                        this.vrmMixer.update(deltaTime);
+                    }
+                    
+                    // VRM更新
+                    if (this.currentVRM) {
+                        this.currentVRM.update(deltaTime);
+                    }
+                    
+                    this.controls.update();
+                    this.renderer.render(this.scene, this.camera);
+                };
+                
+                animate();
+            }
+            
+            handleResize() {
+                this.camera.aspect = window.innerWidth / window.innerHeight;
+                this.camera.updateProjectionMatrix();
+                this.renderer.setSize(window.innerWidth, window.innerHeight);
+            }
+            
+            updateStatus(message) {
+                this.statusDisplay.textContent = message;
+                console.log('Status:', message);
+            }
+            
+            hideLoading() {
+                this.loadingOverlay.classList.add('hidden');
+            }
+            
+            // 視点表示切り替え関数（Live2Dスタイル）
+            toggleVision() {
+                this.isVisionVisible = !this.isVisionVisible;
+                
+                if (this.isVisionVisible) {
+                    this.aiTuberVision.classList.remove('hidden');
+                    // Live2Dと同じく、表示時に手動更新のみ実行
+                    setTimeout(() => this.updateScreenshotManually(), 100);
+                } else {
+                    this.aiTuberVision.classList.add('hidden');
+                }
+            }
+            
+            // AITuber視点画像の制御関数（Live2Dシンプル方式）
+            setVisionImage(imageSrc, width = 300, height = 200) {
+                const visionContainer = this.aiTuberVision;
+                const visionImage = this.visionImage;
+                const visionPlaceholder = this.visionPlaceholder;
+                
+                // コンテナサイズを調整
+                visionContainer.style.width = width + 'px';
+                visionContainer.style.height = height + 'px';
+                
+                if (imageSrc) {
+                    // Live2Dシステムと同じシンプルな方式
+                    visionImage.src = imageSrc;
+                    visionImage.style.display = 'block';
+                    visionPlaceholder.style.display = 'none';
+                    
+                    // エラー時のみ処理（初期化はしない）
+                    visionImage.onerror = () => {
+                        console.log('⚠️ 画像読み込みエラー（継続動作）');
+                        // 既存の表示を維持
+                    };
+                } else {
+                    // 初回のみプレースホルダーを表示
+                    visionImage.style.display = 'none';
+                    visionPlaceholder.style.display = 'flex';
+                    visionPlaceholder.innerHTML = `
+                        <div class="icon">👀</div>
+                        <div>画像を読み込み中...</div>
+                    `;
+                }
+            }
+            
+            // 画像をクリアする関数
+            clearVisionImage() {
+                this.setVisionImage(null);
+            }
+            
+            // スクリーンショット初期化（Live2Dシンプル方式）
+            initializeScreenshotAutoUpdate() {
+                // 統一されたパスを使用
+                const screenshotPath = '../../backend/src/image/screenshot.png';
+                
+                // 初回設定（Live2Dと同じシンプルな方式）
+                this.setVisionImage(screenshotPath, 300, 200);
+                
+                console.log('📸 スクリーンショット初期設定完了 (Live2D方式)');
+                
+                // 自動更新システムは無効化（Live2Dと同じ）
+                // ファイルが上書きされてもブラウザーが自動で更新しないため、初期化は発生しない
+            }
+            
+            // 手動スクリーンショット更新（必要時のみ使用）
+            updateScreenshotManually() {
+                const currentTime = Date.now();
+                
+                // 連続更新を防ぐため、最低1秒間隔を設ける
+                if (currentTime - this.lastScreenshotUpdate < 1000) {
+                    console.log('⏱️ 更新間隔が短すぎます、スキップします');
+                    return;
+                }
+                
+                this.lastScreenshotUpdate = currentTime;
+                
+                // Live2Dと同じシンプルな更新方式
+                const basePath = '../../backend/src/image/screenshot.png';
+                const timestamp = currentTime;
+                const newImageSrc = basePath + '?manual=' + timestamp;
+                
+                // 直接更新（Live2Dスタイル）
+                this.setVisionImage(newImageSrc, 300, 200);
+                
+                console.log('🔄 手動スクリーンショット更新: ' + new Date().toLocaleTimeString());
+            }
+
+            // 字幕表示メソッド - 次の更新まで表示続行&設定対応
+            updateSubtitle(subtitleText) {
+                // 既存のタイマーをクリア
+                if (this.subtitleClearTimer) {
+                    clearTimeout(this.subtitleClearTimer);
+                    this.subtitleClearTimer = null;
+                }
+                
+                if (!subtitleText || subtitleText.trim() === '') {
+                    this.subtitle.classList.remove('show');
+                    return;
+                }
+                
+                // <br>で日本語と英語を分割
+                let japanese = '';
+                let english = '';
+                
+                if (subtitleText.includes('<br>')) {
+                    const parts = subtitleText.split('<br>');
+                    japanese = parts[0] ? parts[0].trim() : '';
+                    english = parts[1] ? parts[1].trim() : '';
+                } else {
+                    japanese = subtitleText.trim();
+                }
+                
+                // 設定に基づいて表示テキストを構築
+                let displayParts = [];
+                if (this.subtitleSettings.showJapanese && japanese) {
+                    displayParts.push(japanese);
+                }
+                if (this.subtitleSettings.showEnglish && english) {
+                    displayParts.push(`(${english})`);
+                }
+                
+                if (displayParts.length === 0) {
+                    this.subtitle.classList.remove('show');
+                    return;
+                }
+                
+                const displayText = displayParts.join(' ');
+                this.subtitle.textContent = displayText;
+                this.subtitle.classList.add('show');
+                
+                // 次の更新まで表示続行（タイマーは設定しない）
+                console.log('字幕表示:', displayText);
+            }
+            
+            // Flask APIからの字幕受信（WebSocket接続）
+            initializeSubtitleConnection() {
+                // WebSocket接続を試行（開発環境用）
+                try {
+                    this.subtitleSocket = new WebSocket('ws://localhost:5000/subtitle');
+                    
+                    this.subtitleSocket.onmessage = (event) => {
+                        const data = JSON.parse(event.data);
+                        if (data.japanese) {
+                            // <br>で区切られた形式に変換
+                            const fullText = data.japanese + (data.english ? '<br>' + data.english : '');
+                            this.updateSubtitle(fullText);
+                        }
+                    };
+                    
+                    this.subtitleSocket.onopen = () => {
+                        console.log('字幕WebSocket接続成功');
+                    };
+                    
+                    this.subtitleSocket.onerror = (error) => {
+                        console.log('字幕WebSocket接続失敗（通常動作）:', error);
+                    };
+                    
+                } catch (error) {
+                    console.log('WebSocket未対応または接続失敗');
+                }
+                
+                // HTTP API polling（フォールバック）
+                this.initializeSubtitlePolling();
+            }
+            
+            // HTTP API polling for subtitle updates
+            initializeSubtitlePolling() {
+                setInterval(async () => {
+                    try {
+                        const response = await fetch('http://127.0.0.1:5000/subtitle');
+                        if (response.ok) {
+                            const data = await response.json();
+                            if (data.japanese && data.timestamp > this.lastSubtitleTimestamp) {
+                                // <br>で区切られた形式に変換
+                                const fullText = data.japanese + (data.english ? '<br>' + data.english : '');
+                                this.updateSubtitle(fullText);
+                                this.lastSubtitleTimestamp = data.timestamp;
+                            }
+                        }
+                    } catch (error) {
+                        // API接続失敗時は何もしない（通常動作）
+                    }
+                }, 500); // 500msごとにポーリング
+            }
+            
+            // 音声再生ポーリング初期化
+            initializeVoicePolling() {
+                this.voicePollingInterval = setInterval(async () => {
+                    try {
+                        const response = await fetch('http://127.0.0.1:5000/voice');
+                        if (response.ok) {
+                            const data = await response.json();
+                            if (data.play === true) {
+                                const now = new Date().toLocaleTimeString();
+                                console.log(`[${now}] 音声再生指示を受信 - 新しい音声ファイルを読み込み開始`);
+                                this.playVoiceFile();
+                            }
+                        }
+                    } catch (error) {
+                        // サーバー接続失敗時は何もしない（通常動作）
+                    }
+                }, 200); // 200msごとにポーリング（音声は素早く反応させる）
+            }
+            
+            // 音声ファイルを口パク付きで再生
+            async playVoiceFile() {
+                if (!this.currentVRM) {
+                    console.warn('VRMモデルが読み込まれていません');
+                    return;
+                }
+                
+                if (this.isLipSyncActive) {
+                    console.log('既に音声再生中です');
+                    return;
+                }
+                
+                try {
+                    this.updateStatus('自動音声再生開始...');
+                    
+                    // Web Audio API初期化
+                    this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    
+                    // 音声ファイルを読み込み（キャッシュバスターを使用）
+                    const timestamp = new Date().getTime();
+                    const response = await fetch(`../../backend/src/voice/voice.wav?t=${timestamp}`);
+                    if (!response.ok) {
+                        throw new Error('音声ファイルが見つかりません');
+                    }
+                    
+                    const arrayBuffer = await response.arrayBuffer();
+                    const audioBuffer = await this.audioContext.decodeAudioData(arrayBuffer);
+                    
+                    // オーディオ解析設定
+                    const source = this.audioContext.createBufferSource();
+                    source.buffer = audioBuffer;
+                    
+                    this.analyser = this.audioContext.createAnalyser();
+                    const gainNode = this.audioContext.createGain();
+                    this.analyser.fftSize = 2048;
+                    this.analyser.smoothingTimeConstant = 0.8;
+                    this.dataArray = new Uint8Array(this.analyser.fftSize);
+                    
+                    // オーディオノード接続
+                    source.connect(this.analyser);
+                    this.analyser.connect(gainNode);
+                    gainNode.connect(this.audioContext.destination);
+                    
+                    // 再生終了時の処理
+                    source.onended = () => {
+                        this.stopLipSync();
+                        this.updateStatus('音声再生完了 - 次の音声待機中');
+                        console.log('音声再生完了 - 次の音声ファイル待機中');
+                        
+                        // 音声終了後、表情を滑らかにノーマルに戻す（2秒後に開始、1.8秒かけて）
+                        setTimeout(() => {
+                            console.log('[表情リセット] 自動音声終了後、表情をニュートラルに戻します');
+                            this.setSmoothExpression('neutral', 1800);
+                            this.currentEmotionalExpression = 'neutral'; // 状態を更新
+                        }, 2000);
+                    };
+                    
+                    // 音声再生開始
+                    source.start();
+                    this.isLipSyncActive = true;
+                    
+                    // 口パク変数初期化
+                    this.lastVowelChangeTime = performance.now();
+                    this.currentVowelExpression = 'a';
+                    
+                    this.updateStatus('自動音声再生中（口パク付き）');
+                    console.log(`新しい音声ファイル再生開始: ${audioBuffer.duration.toFixed(2)}秒 (timestamp: ${timestamp})`);
+                    
+                    // リアルタイム口パクアニメーション開始
+                    this.startLipSyncAnimation();
+                    
+                } catch (error) {
+                    console.error('自動音声再生エラー:', error);
+                    this.updateStatus(`自動音声再生エラー: ${error.message}`);
+                    this.stopLipSync();
+                }
+            }
+            
+            // ご機嫌度ポーリング初期化
+            initializeMoodPolling() {
+                this.moodPollingInterval = setInterval(async () => {
+                    try {
+                        const response = await fetch('http://127.0.0.1:5000/mood');
+                        if (response.ok) {
+                            const data = await response.json();
+                            if (data.mood !== undefined && data.mood !== this.currentMoodValue) {
+                                this.updateMoodDisplay(data.mood);
+                                this.currentMoodValue = data.mood;
+                            }
+                        }
+                    } catch (error) {
+                        // サーバー接続失敗時は何もしない（通常動作）
+                    }
+                }, 1000); // 1秒ごとにポーリング
+            }
+            
+            // 感情・表情ポーリング初期化
+            initializeEmotionPolling() {
+                // 感情/モーションポーリング
+                this.emotionPollingInterval = setInterval(async () => {
+                    try {
+                        const response = await fetch('http://127.0.0.1:5000/vrm/motion');
+                        if (response.ok) {
+                            const data = await response.json();
+                            if (data.emotion && data.emotion !== this.currentEmotion) {
+                                this.handleEmotionUpdate(data.emotion);
+                                this.currentEmotion = data.emotion;
+                            }
+                        }
+                    } catch (error) {
+                        // サーバー接続失敗時は何もしない（通常動作）
+                    }
+                }, 1000); // 1秒ごとにポーリング
+                
+                // 表情ポーリング
+                this.expressionPollingInterval = setInterval(async () => {
+                    try {
+                        const response = await fetch('http://127.0.0.1:5000/expression');
+                        if (response.ok) {
+                            const data = await response.json();
+                            if (data.expression && data.expression !== this.currentExpressionFromBackend) {
+                                this.handleExpressionUpdate(data.expression);
+                                this.currentExpressionFromBackend = data.expression;
+                            }
+                        }
+                    } catch (error) {
+                        // サーバー接続失敗時は何もしない（通常動作）
+                    }
+                }, 1000); // 1秒ごとにポーリング
+            }
+            
+            // 感情に基づくモーション再生
+            handleEmotionUpdate(emotion) {
+                console.log(`[感情更新] 受信: ${emotion}`);
+                
+                // 感情を対応するVRMAファイル名にマッピング
+                const emotionToAnimation = {
+                    'normal': 'Relax',
+                    'angry': 'Angry', 
+                    'sad': 'Sad',
+                    'happy': 'Clapping',
+                    'excited': 'Jump',
+                    'blush': 'Blush',
+                    'surprised': 'Surprised',
+                    'sleepy': 'Sleepy',
+                    'thinking': 'Thinking',
+                    'relax': 'Relax',
+                    'goodbye': 'Goodbye'
+                };
+                
+                const animationName = emotionToAnimation[emotion];
+                if (animationName) {
+                    console.log(`[感情更新] アニメーション再生: ${animationName}`);
+                    this.playAnimation(animationName);
+                } else {
+                    console.log(`[感情更新] 未対応の感情: ${emotion}, デフォルトアニメーション再生`);
+                    this.playAnimation('Relax');
+                }
+            }
+            
+            // 表情更新の処理
+            handleExpressionUpdate(expression) {
+                console.log(`[表情更新] 受信: ${expression}`);
+                
+                // バックエンドから受信した表情をVRM表情にマッピング
+                const backendToVRMExpression = {
+                    'normal': 'neutral',
+                    'angry': 'angry',
+                    'sad': 'sad', 
+                    'happy': 'happy',
+                    'excited': 'happy',
+                    'blush': 'happy',
+                    'surprised': 'surprised',
+                    'sleepy': 'relaxed',
+                    'thinking': 'neutral',
+                    'relax': 'relaxed',
+                    'goodbye': 'neutral'
+                };
+                
+                const vrmExpression = backendToVRMExpression[expression] || 'neutral';
+                console.log(`[表情更新] VRM表情設定: ${vrmExpression}`);
+                
+                // 滑らかな表情変化（1.2秒）
+                this.setSmoothExpression(vrmExpression, 1200);
+                
+                // 現在の表情を記録（音声終了時のリセット用）
+                this.currentEmotionalExpression = vrmExpression;
+            }
+            
+            // ご機嫌度の表示を更新
+            updateMoodDisplay(moodValue) {
+                // 0-100の範囲に制限
+                moodValue = Math.max(0, Math.min(100, moodValue));
+                
+                // 数値表示を更新
+                this.moodValue.textContent = moodValue;
+                
+                // インジケーターの位置を更新（下部0%から上部100%）
+                const percentage = moodValue; // 0-100
+                const bottomPosition = (percentage / 100) * 160; // 160pxは調整後の高さ
+                this.moodIndicator.style.bottom = bottomPosition + 'px';
+                
+                // ログ出力
+                console.log(`ご機嫌度更新: ${moodValue}`);
+            }
+            
+            // テーマカラー変更メソッド
+            changeTheme(themeName) {
+                const themes = {
+                    pink: {
+                        primary: '#ff1493',
+                        secondary: '#ffb6c1',
+                        bgStart: 'rgba(255, 240, 245, 0.95)',
+                        bgEnd: 'rgba(255, 228, 235, 0.9)',
+                        shadow: 'rgba(255, 20, 147, 0.4)'
+                    },
+                    blue: {
+                        primary: '#1e90ff',
+                        secondary: '#87ceeb',
+                        bgStart: 'rgba(240, 248, 255, 0.95)',
+                        bgEnd: 'rgba(230, 245, 255, 0.9)',
+                        shadow: 'rgba(30, 144, 255, 0.4)'
+                    },
+                    green: {
+                        primary: '#32cd32',
+                        secondary: '#98fb98',
+                        bgStart: 'rgba(240, 255, 240, 0.95)',
+                        bgEnd: 'rgba(230, 255, 230, 0.9)',
+                        shadow: 'rgba(50, 205, 50, 0.4)'
+                    },
+                    purple: {
+                        primary: '#9370db',
+                        secondary: '#dda0dd',
+                        bgStart: 'rgba(248, 240, 255, 0.95)',
+                        bgEnd: 'rgba(240, 230, 255, 0.9)',
+                        shadow: 'rgba(147, 112, 219, 0.4)'
+                    },
+                    orange: {
+                        primary: '#ff8c00',
+                        secondary: '#ffd700',
+                        bgStart: 'rgba(255, 250, 240, 0.95)',
+                        bgEnd: 'rgba(255, 245, 220, 0.9)',
+                        shadow: 'rgba(255, 140, 0, 0.4)'
+                    },
+                    cyan: {
+                        primary: '#00ced1',
+                        secondary: '#b0e0e6',
+                        bgStart: 'rgba(240, 255, 255, 0.95)',
+                        bgEnd: 'rgba(225, 255, 255, 0.9)',
+                        shadow: 'rgba(0, 206, 209, 0.4)'
+                    },
+                    red: {
+                        primary: '#dc143c',
+                        secondary: '#ffb6c1',
+                        bgStart: 'rgba(255, 245, 238, 0.95)',
+                        bgEnd: 'rgba(255, 240, 235, 0.9)',
+                        shadow: 'rgba(220, 20, 60, 0.4)'
+                    },
+                    yellow: {
+                        primary: '#ffd700',
+                        secondary: '#ffffe0',
+                        bgStart: 'rgba(255, 255, 240, 0.95)',
+                        bgEnd: 'rgba(255, 250, 205, 0.9)',
+                        shadow: 'rgba(255, 215, 0, 0.4)'
+                    },
+                    indigo: {
+                        primary: '#4b0082',
+                        secondary: '#dda0dd',
+                        bgStart: 'rgba(248, 240, 255, 0.95)',
+                        bgEnd: 'rgba(238, 220, 255, 0.9)',
+                        shadow: 'rgba(75, 0, 130, 0.4)'
+                    },
+                    teal: {
+                        primary: '#008080',
+                        secondary: '#afeeee',
+                        bgStart: 'rgba(240, 255, 255, 0.95)',
+                        bgEnd: 'rgba(224, 255, 255, 0.9)',
+                        shadow: 'rgba(0, 128, 128, 0.4)'
+                    },
+                    magenta: {
+                        primary: '#ff00ff',
+                        secondary: '#ff69b4',
+                        bgStart: 'rgba(255, 240, 255, 0.95)',
+                        bgEnd: 'rgba(255, 228, 255, 0.9)',
+                        shadow: 'rgba(255, 0, 255, 0.4)'
+                    },
+                    lime: {
+                        primary: '#32cd32',
+                        secondary: '#90ee90',
+                        bgStart: 'rgba(240, 255, 240, 0.95)',
+                        bgEnd: 'rgba(224, 255, 224, 0.9)',
+                        shadow: 'rgba(50, 205, 50, 0.4)'
+                    }
+                };
+                
+                const theme = themes[themeName];
+                if (theme) {
+                    const root = document.documentElement;
+                    root.style.setProperty('--theme-primary', theme.primary);
+                    root.style.setProperty('--theme-secondary', theme.secondary);
+                    root.style.setProperty('--theme-bg-start', theme.bgStart);
+                    root.style.setProperty('--theme-bg-end', theme.bgEnd);
+                    root.style.setProperty('--theme-shadow', theme.shadow);
+                    
+                    this.updateStatus(`テーマを「${themeName}」に変更しました`);
+                    console.log(`テーマ変更: ${themeName}`);
+                }
+            }
+        }
+
+        // システム開始
+        window.addEventListener('load', () => {
+            new VRMAITuberSystem();
+        });
+    </script>
+</body>
+</html>
