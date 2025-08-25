@@ -4,7 +4,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Kiwi+Maru&display=swap" rel="stylesheet">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AIMascotKit</title>
+    <title>VRM AITuber System</title>
     <style>
         body {
             margin: 0;
@@ -574,7 +574,7 @@
 </head>
 <body>
     <div id="loadingOverlay">
-        <div>VRM AITuberシステムを初期化中...</div>
+        <div>AIMascotKitを起動中...</div>
     </div>
     
     <canvas id="vrmCanvas"></canvas>
@@ -586,7 +586,7 @@
             <h3>VRMモデル選択</h3>
             <div class="control-group">
                 <select id="characterSelect">
-                    <option value="sample" selected>サンプル</option>
+                    <option value="sample">サンプル</option>
                 </select>
             </div>
         </div>
@@ -850,7 +850,7 @@
             
             async initializeSystem() {
                 try {
-                    this.updateStatus('VRMシステム初期化中...');
+                    this.updateStatus('AIMascotKit初期化中...');
                     this.setupEventListeners();
                     this.initializeThreeJS();
                     
@@ -1171,6 +1171,9 @@
                     
                     // Idle4アイドルアニメーション開始
                     await this.startIdleLoop();
+
+                    // 音声・感情・ご機嫌度ポーリングを再開（モデル切り替え時用）
+                    this.restartPolling();
                     
                 } catch (error) {
                     console.error('キャラクター読み込みエラー:', error);
@@ -2403,28 +2406,9 @@
                 // メニュータイマーをクリア（無効化）
                 // this.clearMenuAutoHideTimer();
                 
-                // 音声ポーリングを停止
-                if (this.voicePollingInterval) {
-                    clearInterval(this.voicePollingInterval);
-                    this.voicePollingInterval = null;
-                }
-                
-                // ご機嫌度ポーリングを停止
-                if (this.moodPollingInterval) {
-                    clearInterval(this.moodPollingInterval);
-                    this.moodPollingInterval = null;
-                }
-                
-                // 感情・表情ポーリングを停止
-                if (this.emotionPollingInterval) {
-                    clearInterval(this.emotionPollingInterval);
-                    this.emotionPollingInterval = null;
-                }
-                if (this.expressionPollingInterval) {
-                    clearInterval(this.expressionPollingInterval);
-                    this.expressionPollingInterval = null;
-                }
-                
+                // ポーリングを停止（モデル切り替え時は一時停止のみ）
+                this.stopPolling();
+
                 // Live2Dスタイルでは自動更新システムは使用しないため、停止処理は不要
                 console.log('📸 Live2Dスタイルのスクリーンショットシステム (自動更新なし)');
                 
@@ -2985,6 +2969,50 @@
                     this.updateStatus(`テーマを「${themeName}」に変更しました`);
                     console.log(`テーマ変更: ${themeName}`);
                 }
+            }
+            
+            // ポーリング停止メソッド
+            stopPolling() {
+                // 音声ポーリングを停止
+                if (this.voicePollingInterval) {
+                    clearInterval(this.voicePollingInterval);
+                    this.voicePollingInterval = null;
+                }
+                
+                // ご機嫌度ポーリングを停止
+                if (this.moodPollingInterval) {
+                    clearInterval(this.moodPollingInterval);
+                    this.moodPollingInterval = null;
+                }
+                
+                // 感情・表情ポーリングを停止
+                if (this.emotionPollingInterval) {
+                    clearInterval(this.emotionPollingInterval);
+                    this.emotionPollingInterval = null;
+                }
+                if (this.expressionPollingInterval) {
+                    clearInterval(this.expressionPollingInterval);
+                    this.expressionPollingInterval = null;
+                }
+                
+                console.log('全ポーリングを停止');
+            }
+            
+            // ポーリング再開メソッド
+            restartPolling() {
+                // 既存のポーリングがあれば停止
+                this.stopPolling();
+                
+                // 音声再生ポーリング開始
+                this.initializeVoicePolling();
+                
+                // ご機嫌度ポーリング開始
+                this.initializeMoodPolling();
+                
+                // 感情・表情ポーリング開始
+                this.initializeEmotionPolling();
+                
+                console.log('全ポーリングを再開');
             }
         }
 
